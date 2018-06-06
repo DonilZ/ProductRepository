@@ -1,0 +1,11 @@
+/home/donilz/Documents/Repository/repository/bin/Debug/netcoreapp2.0/repository.deps.json
+/home/donilz/Documents/Repository/repository/bin/Debug/netcoreapp2.0/repository.runtimeconfig.json
+/home/donilz/Documents/Repository/repository/bin/Debug/netcoreapp2.0/repository.runtimeconfig.dev.json
+/home/donilz/Documents/Repository/repository/bin/Debug/netcoreapp2.0/repository.dll
+/home/donilz/Documents/Repository/repository/bin/Debug/netcoreapp2.0/repository.pdb
+/home/donilz/Documents/Repository/repository/obj/Debug/netcoreapp2.0/repository.csproj.CoreCompileInputs.cache
+/home/donilz/Documents/Repository/repository/obj/Debug/netcoreapp2.0/repository.AssemblyInfoInputs.cache
+/home/donilz/Documents/Repository/repository/obj/Debug/netcoreapp2.0/repository.AssemblyInfo.cs
+/home/donilz/Documents/Repository/repository/obj/Debug/netcoreapp2.0/repository.dll
+/home/donilz/Documents/Repository/repository/obj/Debug/netcoreapp2.0/repository.pdb
+/home/donilz/Documents/Repository/repository/obj/Debug/netcoreapp2.0/repository.csprojResolveAssemblyReference.cache
