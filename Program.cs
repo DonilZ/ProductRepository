@@ -23,13 +23,13 @@ namespace repository
 
                 switch (command) {
                     case "1":
-                        User_shell.get_all_products(ref db_manager);
+                        User_shell_get.get_all_products(ref db_manager);
                         break;
                     case "2":
-                        User_shell.get_concrete_product_versions(ref db_manager);
+                        User_shell_get.get_concrete_product_versions(ref db_manager);
                         break;
                     case "3":
-                        User_shell.get_concrete_product_concrete_version(ref db_manager);
+                        User_shell_get.get_concrete_product_concrete_version(ref db_manager);
                         break;
                     case "4":
                         User_shell.add_version(ref db_manager);

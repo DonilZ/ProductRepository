@@ -131,7 +131,6 @@ namespace repository {
         private void get_error_db() {
             Console.WriteLine("База данных не инициализирована");
         }
-
         private bool check_correct_number_version(string number_version) {
             try {
                 string[] ver = number_version.Split('.');
@@ -150,13 +149,6 @@ namespace repository {
             }
         }
 
-
-
-
-
-       
-
     }
-   
     
 }
