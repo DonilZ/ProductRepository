@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace repository {
     class User_shell_get {
+
         public static void get_all_products(ref Db_manager db_manager) {
             List<Product> products = db_manager.get_products_inf();
             foreach(Product product in products) {
@@ -10,6 +11,7 @@ namespace repository {
                                     + " |  | " + product.get_short_desc() + " |");
             }
         }
+
         public static void get_concrete_product_versions(ref Db_manager db_manager) {
             Console.WriteLine("Введите уникальное имя необходимого продукта:");
             string name_product = Console.ReadLine();
@@ -44,8 +46,11 @@ namespace repository {
                 Console.WriteLine("Выбранной версии не существует");
             }
         }
+
     }
-    class User_shell {    
+
+    class User_shell {   
+         
         public static void add_version(ref Db_manager db_manager) {
             string name_product, number_version, short_desc, long_desc, changes;
             Pair<string, string> file;

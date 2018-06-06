@@ -19,9 +19,11 @@ namespace repository {
             
             return instance_db;
         }
+
         public List<Product> get_products_inf() {
             return products;
         }
+
         public List<Version> get_product_versions_inf(string name_product) {
             try {
                 foreach (Product product in products) {
@@ -36,6 +38,7 @@ namespace repository {
 
             return null;
         }
+
         public Version get_product_concrete_version_inf(string name_product, string number_version) {
             List<Version> _versions = get_product_versions_inf(name_product);           
             try {
@@ -51,6 +54,7 @@ namespace repository {
 
             return null;
         }
+
         public void add_version(Version version, Product product) {
             if (check_correct_number_version(version.number_version)) {
                 try {
@@ -69,6 +73,7 @@ namespace repository {
                 Console.WriteLine("Номер версии введен некорректно");
             }
         }
+
         private bool check_products(Version version) {
             foreach (Product product in products) {
                 if (product.get_name_product() == version.name_product) {
@@ -131,6 +136,7 @@ namespace repository {
         private void get_error_db() {
             Console.WriteLine("База данных не инициализирована");
         }
+        
         private bool check_correct_number_version(string number_version) {
             try {
                 string[] ver = number_version.Split('.');

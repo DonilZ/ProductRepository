@@ -17,6 +17,7 @@ namespace repository {
         public Pair<string,string> dist_file { get; private set; }
 
         private Version() { }
+
         public Version (string name_product, string number_version, string short_desc,
                         string long_desc, string changes, Pair<string,string> dist_file) {
             this.name_product = name_product;
@@ -42,6 +43,7 @@ namespace repository {
         private Version last_version;
 
         private Product() { }
+        
         public Product (Version last_version) {
             all_versions = new List<Version>();
             this.last_version = last_version;
@@ -83,6 +85,7 @@ namespace repository {
                 }
             }
         }
+
         public void add_version (Version version) {
             all_versions.Add(version);
             check_last_version();
