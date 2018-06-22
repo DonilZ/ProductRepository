@@ -7,7 +7,7 @@ namespace repository
     {
         static void Main(string[] args)
         {
-            Db_manager db_manager = Db_manager.create_db();
+            DatabaseManager CurrentDatabaseManager = DatabaseManager.CreateDatabase();
          
             while (true) {        
                 Console.WriteLine("Выберите действие:");
@@ -19,26 +19,26 @@ namespace repository
                 Console.WriteLine("6: Удалить информацию о выбранной версии выбранного программного продукта");
                 Console.WriteLine("Любая другая клавиша: Выход из программы");
 
-                string command = Console.ReadLine();
+                string Command = Console.ReadLine();
 
-                switch (command) {
+                switch (Command) {
                     case "1":
-                        User_shell_get.get_all_products(ref db_manager);
+                        UserShellGet.GetInformationProducts(CurrentDatabaseManager);
                         break;
                     case "2":
-                        User_shell_get.get_concrete_product_versions(ref db_manager);
+                        UserShellGet.GetInformationProductVersions(CurrentDatabaseManager);
                         break;
                     case "3":
-                        User_shell_get.get_concrete_product_concrete_version(ref db_manager);
+                        UserShellGet.GetInformationProductConcreteVersion(CurrentDatabaseManager);
                         break;
                     case "4":
-                        User_shell.add_version(ref db_manager);
+                        UserShell.AddVersion(CurrentDatabaseManager);
                         break;
                     case "5":
-                        User_shell.update_version(ref db_manager);
+                        UserShell.UpdateVersion(CurrentDatabaseManager);
                         break;
                     case "6":
-                        User_shell.delete_version(ref db_manager);
+                        UserShell.RemoveVersion(CurrentDatabaseManager);
                         break;
                     default:
                         return;
