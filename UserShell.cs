@@ -2,6 +2,25 @@ using System;
 using System.Collections.Generic;
 
 namespace repository {
+
+    /*
+     * В двух классах UserShell ты хорошо сделал, что вынес внешнюю зависимость в виде DatabaseManager-а наружу, т.е. применил принцип инверсии управления, 
+     * буква I в известном SOLID. Это позволит тебе при тестировании этих классов заменить реальную зависимость на объекты заглушки. Но вот реализация этой инверсии
+     * нестандартная, скажем так. Чаще всего зависимость инъектируют в класс через параметры конструктора при создании экземпляра объекта. Т.е. если бы ты сделал UserShell 
+     * обычным классом с обычными, а не static методами, то при конструировании этого класса ты бы мог передать ему через коснтруктор экземпляр DatabaseManager-а, а уже методы 
+     * не требовали бы его передавать в качестве параметра. На самом деле, такой способ оптимален здесь. 
+     * 
+     * Но есть еще один - использование синглтона. Тогда зависимость получается не через параметры методов, а обращением к статиковому методу получения синглтона, т.е. 
+     * в твоем случае - к CreateDatabase. И если ты эту зависимость хоел бы заменить на объект-заглушку, ты мог бы завести еще один статик метод - SetDatabase, который бы 
+     * подставил нужный инстанс-заглушку, которая уже возвращалась бы при обращении к CreateDatabase. С таким подходом больше проблем, на самом деле, поэтому использовать его 
+     * лучше только в определенных специальных случаях. Пока не буду тебя загружать этим. При желании можешь почитать книжку The Art of Unit Testing, там и об этом, и о многом
+     * другом полезном написано. 
+     * 
+     * Выше использовал термин объект-заглушка. Возможно, он тебе не знаком. Если так, почитай про mocks и fakes в unit-тестировании. И вообще про unit-тестирование. Нам 
+     * потом тоже пригодится.
+     * 
+     */
+
     //Класс, отвечающий за предоставление пользователю необходимой информации о продуктах и их версиях из БД.
     class UserShellGet {
 
@@ -10,6 +29,11 @@ namespace repository {
             foreach(Product CurrentProduct in Products) {
                 Console.WriteLine("| {0} |  | {1} |  | {2} |", CurrentProduct.GetNameProduct(), 
                                 CurrentProduct.GetNumberLatestVersion(), CurrentProduct.GetShortDescription());
+
+                /*
+                 * Попробуй string interpolation в качестве способа формирования строки
+                 */
+
             }
         }
 
@@ -39,7 +63,7 @@ namespace repository {
             Version ResultedVersion = CurrentDatabaseManager.GetInformationProductConcreteVersion(NameProduct, NumberVersion);
 
             if (ResultedVersion != null) {
-            Console.WriteLine("| {0} |  | {1} |  | {2} |  | {3} |  | {4} |  | {5} |  | {6} |", 
+                Console.WriteLine("| {0} |  | {1} |  | {2} |  | {3} |  | {4} |  | {5} |  | {6} |", 
                             ResultedVersion.NameProduct, ResultedVersion.NumberVersion, ResultedVersion.ShortDescription, 
                             ResultedVersion.LongDescription, ResultedVersion.Changes, ResultedVersion.DistributedFile.First, 
                             ResultedVersion.DistributedFile.Second);
@@ -86,6 +110,16 @@ namespace repository {
         }
 
         private static void InputValues(out Version InputVersion) {
+
+            /*
+             * 1. Вместо передачи out-параметра лучше, чтобы этот метод просто возвращал объект класса Version, а на вход не принимал ничего
+             * 
+             * 2. Вместо того, чтобы создавать отдельные переменные, читать в них значения с консоли, а потом конструировать объект Version, лучше сконструировать 
+             * его сразу, а потом в его свойства читать с консоли. Будет лаконичнее.
+             * 
+             */
+
+
             Console.WriteLine("Введите уникальное имя продукта:");
             string NameProduct;
             NameProduct = Console.ReadLine();
