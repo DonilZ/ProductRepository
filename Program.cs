@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace repository
 {
@@ -7,7 +8,11 @@ namespace repository
     {
         static void Main(string[] args)
         {
-            DatabaseManager CurrentDatabaseManager = DatabaseManager.CreateDatabase();
+            ILogger log = new ConsoleLogger();
+            ProductRepository currentProductRepository = ProductRepository.CreateDatabase(log);
+
+            UserShellGet currentUserShellGet = new UserShellGet(currentProductRepository);
+            UserShell currentUserShell = new UserShell(currentProductRepository);
          
             while (true) {        
                 Console.WriteLine("Выберите действие:");
@@ -19,26 +24,26 @@ namespace repository
                 Console.WriteLine("6: Удалить информацию о выбранной версии выбранного программного продукта");
                 Console.WriteLine("Любая другая клавиша: Выход из программы");
 
-                string Command = Console.ReadLine();
+                string command = Console.ReadLine();
 
-                switch (Command) {
+                switch (command) {
                     case "1":
-                        UserShellGet.GetInformationProducts(CurrentDatabaseManager);
+                        currentUserShellGet.GetProducts();
                         break;
                     case "2":
-                        UserShellGet.GetInformationProductVersions(CurrentDatabaseManager);
+                        currentUserShellGet.GetProductVersions();
                         break;
                     case "3":
-                        UserShellGet.GetInformationProductConcreteVersion(CurrentDatabaseManager);
+                        currentUserShellGet.GetProductConcreteVersion();
                         break;
                     case "4":
-                        UserShell.AddVersion(CurrentDatabaseManager);
+                        currentUserShell.AddVersion();
                         break;
                     case "5":
-                        UserShell.UpdateVersion(CurrentDatabaseManager);
+                        currentUserShell.UpdateVersion();
                         break;
                     case "6":
-                        UserShell.RemoveVersion(CurrentDatabaseManager);
+                        currentUserShell.RemoveVersion();
                         break;
                     default:
                         return;
