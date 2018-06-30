@@ -82,13 +82,13 @@ namespace repository {
         /// <summary>
         /// Метод для обновления информации о версии.
         /// </summary>
-        public void Update(Version UpdateVersion) {
-            ProductName = UpdateVersion.ProductName;
-            ProductVersion = UpdateVersion.ProductVersion;
-            ShortDescription = UpdateVersion.ShortDescription;
-            LongDescription = UpdateVersion.LongDescription;
-            Changes = UpdateVersion.Changes;
-            DownloadableFile = UpdateVersion.DownloadableFile;
+        public void Update(Version updateVersion) {
+            ProductName = updateVersion.ProductName;
+            ProductVersion = updateVersion.ProductVersion;
+            ShortDescription = updateVersion.ShortDescription;
+            LongDescription = updateVersion.LongDescription;
+            Changes = updateVersion.Changes;
+            DownloadableFile = updateVersion.DownloadableFile;
         }
     }
     
@@ -124,10 +124,10 @@ namespace repository {
          * 1) Убрал конструкторы без параметров. 
          */
         
-        public Product (Version _LatestVersion) {
-            _allVersions = new List<Version>();
-            this._latestVersion = _LatestVersion;
-            _allVersions.Add(_LatestVersion);
+        public Product (Version latestVersion) {
+             _allVersions = new List<Version>();
+             _latestVersion = latestVersion;
+            _allVersions.Add(latestVersion);
             _nameProduct = _latestVersion.ProductName;
         }
 
@@ -194,23 +194,23 @@ namespace repository {
         /// <summary>
         /// Метод для добавления версии в общий список версий продукта и, как следствие, обновления последней версии продукта.
         /// </summary>
-        public void AddVersion (Version AddedVersion) {
-            _allVersions.Add(AddedVersion);
+        public void AddVersion (Version addedVersion) {
+            _allVersions.Add(addedVersion);
             UpdateLatestVersion();
         }
 
         /// <summary>
         /// Метод для удаления версии из общего списка версий продукта и, как следствие, обновления последней версии продукта (при необходимости).
         /// </summary>
-        public void RemoveVersion (Version RemovedVersion) {
-            _allVersions.Remove(RemovedVersion);
+        public void RemoveVersion (Version removedVersion) {
+            _allVersions.Remove(removedVersion);
             UpdateLatestVersion();
         }
 
         /// <summary>
         /// Метод для проверк добавляемой версии на то, является ли она старее последней.
         /// </summary>
-        public bool CheckAddedVersion(Version AddedVersion) {
+        public bool CheckAddedVersion(Version addedVersion) {
             /*if (_allVersions.Count > 0) {
                 string[] Latest = _allVersions[_allVersions.Count - 1].ProductVersion.Split('.');
                 string[] Added = AddedVersion.ProductVersion.Split('.');
@@ -241,13 +241,13 @@ namespace repository {
             }
             return true; */
 
-            return _allVersions.Count < 0 || IsNewVersion(0, AddedVersion) ?  true : false;
+            return _allVersions.Count < 0 || IsNewVersion(0, addedVersion) ?  true : false;
         }
 
-        private bool IsNewVersion (int index, Version AddedVersion) {
+        private bool IsNewVersion (int index, Version addedVersion) {
 
             string[] latest = _latestVersion.ProductVersion.Split('.');
-            string[] added = AddedVersion.ProductVersion.Split('.');
+            string[] added = addedVersion.ProductVersion.Split('.');
 
             if (index == added.Count()) return false;
 
@@ -255,7 +255,7 @@ namespace repository {
                 return true;
             }
             else if (Convert.ToInt32(added[index]) == Convert.ToInt32(latest[index])) {
-                return IsNewVersion(++index, AddedVersion);
+                return IsNewVersion(++index, addedVersion);
             }
             else {
                 return false;
