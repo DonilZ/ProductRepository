@@ -5,17 +5,10 @@ using System.Linq;
 namespace repository {
 
     /*
-<<<<<<< HEAD
      * В двух классах UserShell ты хорошо сделал, что вынес внешнюю зависимость в виде ProductRepository-а наружу, т.е. применил принцип инверсии управления, 
      * буква I в известном SOLID. Это позволит тебе при тестировании этих классов заменить реальную зависимость на объекты заглушки. Но вот реализация этой инверсии
      * нестандартная, скажем так. Чаще всего зависимость инъектируют в класс через параметры конструктора при создании экземпляра объекта. Т.е. если бы ты сделал UserShell 
      * обычным классом с обычными, а не static методами, то при конструировании этого класса ты бы мог передать ему через коснтруктор экземпляр ProductRepository-а, а уже методы 
-=======
-     * В двух классах UserShell ты хорошо сделал, что вынес внешнюю зависимость в виде DatabaseManager-а наружу, т.е. применил принцип инверсии управления, 
-     * буква I в известном SOLID. Это позволит тебе при тестировании этих классов заменить реальную зависимость на объекты заглушки. Но вот реализация этой инверсии
-     * нестандартная, скажем так. Чаще всего зависимость инъектируют в класс через параметры конструктора при создании экземпляра объекта. Т.е. если бы ты сделал UserShell 
-     * обычным классом с обычными, а не static методами, то при конструировании этого класса ты бы мог передать ему через коснтруктор экземпляр DatabaseManager-а, а уже методы 
->>>>>>> 638cfd6cf65319457d5878763338303644681dec
      * не требовали бы его передавать в качестве параметра. На самом деле, такой способ оптимален здесь. 
      * 
      * Но есть еще один - использование синглтона. Тогда зависимость получается не через параметры методов, а обращением к статиковому методу получения синглтона, т.е. 
@@ -29,7 +22,6 @@ namespace repository {
      * 
      */
 
-<<<<<<< HEAD
 
     /* 
      * ПРАВКИ:
@@ -58,29 +50,16 @@ namespace repository {
             List<Product> products = _currentProductRepository.GetProducts();
             foreach(Product currentProduct in products) {
                 Console.WriteLine($"| {currentProduct.GetProductName()} |  | {currentProduct.GetNumberLatestVersion()} |  | {currentProduct.GetShortDescription()} |");
-=======
-    //Класс, отвечающий за предоставление пользователю необходимой информации о продуктах и их версиях из БД.
-    class UserShellGet {
-
-        public static void GetInformationProducts(DatabaseManager CurrentDatabaseManager) {
-            List<Product> Products = CurrentDatabaseManager.GetInformationProducts();
-            foreach(Product CurrentProduct in Products) {
-                Console.WriteLine("| {0} |  | {1} |  | {2} |", CurrentProduct.GetNameProduct(), 
-                                CurrentProduct.GetNumberLatestVersion(), CurrentProduct.GetShortDescription());
->>>>>>> 638cfd6cf65319457d5878763338303644681dec
 
                 /*
                  * Попробуй string interpolation в качестве способа формирования строки
                  */
 
-<<<<<<< HEAD
                 /*
                  * Прошу прощения (вы в первых правках уже указывали на это), прочитал неполную информацию по string interpolation и сделал неправильно.
                  * Исправлено.
                  */
 
-=======
->>>>>>> 638cfd6cf65319457d5878763338303644681dec
             }
         }
 
@@ -115,19 +94,11 @@ namespace repository {
 
             Version resultedVersion = _currentProductRepository.GetProductConcreteVersion(productName, productVersion);
 
-<<<<<<< HEAD
             if (resultedVersion != null) {
                 Console.WriteLine($"| {resultedVersion.ProductName} |  | {resultedVersion.ProductVersion} |  " + 
                                     $"| {resultedVersion.ShortDescription} |  | {resultedVersion.LongDescription} |  " + 
                                     $"| {resultedVersion.Changes} |  | {resultedVersion.DownloadableFile.FileName} |  " + 
                                     $"| {resultedVersion.DownloadableFile.FileUrl} |");
-=======
-            if (ResultedVersion != null) {
-                Console.WriteLine("| {0} |  | {1} |  | {2} |  | {3} |  | {4} |  | {5} |  | {6} |", 
-                            ResultedVersion.NameProduct, ResultedVersion.NumberVersion, ResultedVersion.ShortDescription, 
-                            ResultedVersion.LongDescription, ResultedVersion.Changes, ResultedVersion.DistributedFile.First, 
-                            ResultedVersion.DistributedFile.Second);
->>>>>>> 638cfd6cf65319457d5878763338303644681dec
             }
             else {
                 Console.WriteLine("Выбранной версии не существует");
@@ -186,14 +157,10 @@ namespace repository {
             _currentProductRepository.RemoveVersion(productName, productVersion);
         }
 
-<<<<<<< HEAD
         /// <summary>
         /// Метод для ввода пользователем информации
         /// </summary>
         private Version InputValues() {
-=======
-        private static void InputValues(out Version InputVersion) {
->>>>>>> 638cfd6cf65319457d5878763338303644681dec
 
             /*
              * 1. Вместо передачи out-параметра лучше, чтобы этот метод просто возвращал объект класса Version, а на вход не принимал ничего
@@ -203,15 +170,12 @@ namespace repository {
              * 
              */
 
-<<<<<<< HEAD
             /*
              * ПРАВКИ:
              * 1) (1 пункт) Убрал out-параметр. Поменял тип возвращаемого значения метода (теперь он возвращает объект класса Version).
              * 2) (2 пункт) Пока договорились оставить как есть.
              */
 
-=======
->>>>>>> 638cfd6cf65319457d5878763338303644681dec
 
             Console.WriteLine("Введите уникальное имя продукта:");
             string productName;
