@@ -4,26 +4,23 @@ using System.Linq;
 
 namespace repository {
 
-    /*
-     * У тебя класс DatabaseManager получился почти реалиазией шаблона Репозиторий, т.к. он инкапсулирует в себе запросную логику и предоставляет наружу более 
-     * простой интерфейс для работы с данными. Это хорошо! Иногда такие объекты называют репозиториями (в твоем случае - ProductRepository), иногда - сервисами. Сервис, конечно,
-     * немного более широкое понятие, чем репозиторий; репозиторий может быть лишь частью сервиса. Но можно и сервисом назвать - ProductService. Предлагаю выбрать
-     * одно из этих двух названий, т.к. DatabaseManager - это что-то, что управляет БД, в смысле создания, резервного копирования и т.п. 
-     */
-
-    /*
-     * ПРАВКИ:
-     * 1) Поменял название класса DatabaseManager на ProductRepository 
-    */
-
     ///<summary>
     ///Класс, имитирующий работу с базой данных (хранение версий и продуктов, получение необходимой информации о версиях и продуктах, добавление, обновление и удаление версий и продуктов) 
     ///</summary>
     class ProductRepository {
-        private static ProductRepository _instanceDatabase;
+        private static ProductRepository _instanceDatabase; /*это ведь как раз ссылка на singleton? Тогда лучше _singletonInstance*/
         private List<Version> _versions;
         private List<Product> _products;
-        private ILogger _log;
+
+        /*
+         * Никак не могу понять, зачем здесь отдельный список версий? Ведь они внутри продуктов есть! Понятно, что это могут быть ссылки на
+         * одни и те же объекты, но ведь их нужно держать в согласованном состоянии. В случае с EntityFramework например, это можно делать,
+         * так как он сам за согласованностью следит, но в случае со спиками - зачем так сложно? Я пока просто прокомментарил отдельные фрагменты
+         * в коде этого класса, но на этот момент внимания не обращал. Можешь или сам попробовать поправить, или оставить до следующей итерации.
+         */
+
+
+        private ILogger _log; /*логгер и лог - это разные вещи. здесь - логгер*/
 
         private ProductRepository(ILogger log) {
             _versions = new List<Version>();
@@ -35,33 +32,21 @@ namespace repository {
         /// Метод для создания объекта класса ProductRepository (если объект уже был создан, то метод вернет этот объект)
         /// </summary>
         public static ProductRepository CreateDatabase(ILogger log) {
+
+            /*Лучше назвать мето GetInstance() или Instance(). Во-первых, тут не всегда создается инстанс. Только если его нет. Во-вторых, снаружи
+             код может и не знать что так есть БД, она создается и т.п. Есть репозиторий и он возвращает данные.*/
+
             return _instanceDatabase = _instanceDatabase ?? new ProductRepository(log); 
-            /*
-             * Для такой логики есть более короткий способ записи: return InstanceDatabase = InstanceDatabase ?? new ProductRepository(); 
-             * Просто для общего развития погляди, плс.
-             */
-
-            /*
-             * ПРАВКИ:
-             * 1) Заменил свою реализацию с if на нулевой коалесцирующий оператор
-             */
         }
-
-        /*
-         * Мне кажется, термин Information у тебя лишний здесь. Сама модель - это продукты и версии. Понятно, что это не сами продукты, а информация о них. Но, все в
-         * информационных системах - лишь информация об объектах. Так что, в данном случае это не добавляет ничего к пониманию, а код удлинняет. К тому же, усложняет перевод на 
-         * англиский. Предлагаю все методы переименовать на GetProducts(), GetProductVersions() и т.п.
-         * 
-         * И еще один момент - в данном случае слово Get можно тоже опустить. Потому что понятно, что если ты пишешь dbInstance.Products(), то это и есть получение всех продуктов.
-         * В некоторых книгах есть такие советы. Хотя есть и те, кто строго требует использования слова Get в данном случае.
-         */
-
-
 
          /*
           * ПРАВКИ:
           * 1) Убрал Information из названий методов.
           * 2) Все же Get мне хотелось бы оставить, так как, например, метод с названием Products мне не очень нравится.
+          * 
+          * КОММЕНТАРИИ
+          * 2) В данном проекте - возражений нет.
+          * 
           */
 
         /// <summary>
@@ -77,25 +62,17 @@ namespace repository {
         public List<Version> GetProductVersions(string productName) { 
             return _products.Where(product => product.GetProductName() == productName).SingleOrDefault()?.GetAllVersions();
 
-            /*
-             * С использованием linq этот код можно записать в одну строку:
-             * 
-             *  return Products.Where(product => product.GetProductName() == ProductName).SingleOrDefault()?.GetAllVersions();
-             *  
-             * Так как мы активно используем linq, то предлагаю немного его освоить. И еще, здесь используется оператор ?. - Это чтобы 
-             * в случае отсутствия объектов вернулся null, а не вылетело null reference exception.
-             */
-
-
-
              /*
-              * ПРАВКИ:
-              * 1) Сократил до одной строчки (использовав linq и тернарные операторы) места, в которых происходил проход по списку с помощью цикла foreach и выбор определенного элемента.
-              * 
               * ВОПРОСЫ:
               * 1) Оператор ? (конкретно в выражении return Products.Where(product => product.GetProductName() == ProductName).SingleOrDefault()?.GetAllVersions();) 
               * после подвыражения - это просто, грубо говоря, тернарный оператор, проверяющий, не является ли подвыражение перед ним null?
               * 2) Проверьте пожалуйста, ничего ли я не упустил, вставляя linq (предшествующий код я закомментировал) в тех местах, где до этого использовался цикл foreach.
+             */
+
+
+            /*
+             * 1) Именно так. Это синтаксический сахар. Но очень удобный, т.к. такие проверки в случае сложной структуры объектов в модели нужны очень часто.
+             * 2) Хорошо. Прокомментрую конкретно в тех местах.
              */
         }
 
@@ -115,6 +92,11 @@ namespace repository {
             
             return null; */
 
+            /*
+             * Строго говоря, цикл у тебя искал FirstOrDefault(). Его отличие от SingleOrDefault() в том, что если будет два удовлетворяющих объекта, 
+             * то он выломается с исключением. А FirstOrDefault() - нет. Но с точки зрения логики здесь правильнее SingleOrDefault().
+             */
+
             return currentVersions?.Where(version => version.ProductVersion == productVersion).SingleOrDefault();
         }
 
@@ -122,10 +104,28 @@ namespace repository {
         /// Метод для добавления версии (и, возможно, продукта) в репозиторий
         /// </summary>
         public void AddVersion(Version addedVersion, Product addedProduct) {
+            /*
+             * Мне не очень понятно, зачем в API репозитория есть единственный метод Add с такой сигнатурой. Получается, что для добавления новой версии
+             * уже существующего продукта пользователь API все-равно должен создать экземпляр Product. А в итоге это бесполезное действие. Я бы здесь 
+             * лучше подавал только Version, а Product при необходимость создавал прямо здесь. Ну или можно сделать два разных метода в API.
+             */
+
+
+            /*
+             * Попробуй в коде этого метода применить рефакторинг "invert if". В случае с первым if-ом нужно просто проверять отрицание того же условия,  
+             * а потом писать в лог и делать return. В этом случае код в ветке else можно уже в нее не оборачивать, а писать на том же уровне. Код будет менее 
+             * вложенным.
+             *
+             */
+
             if (CheckCorrectProductVersion(addedVersion.ProductVersion)) {
 
                 
-                if (CheckUniqueProduct(addedVersion)) {
+                if (CheckUniqueProduct(addedVersion)) { 
+                    /* У тебя в условии, и далее в GetProduct происходит один и тот же перебор продуктов. Нельзя ли 
+                     * просто получить продукт через GetProduct, а если вернулся null, создать его здесь же добавить. В любом из двух вариантов
+                     * у тебя на руках будет продукт, к которому нужно просто добавить версию. Код будет короче. 
+                     */
                     _products.Add(addedProduct);
                     _log.LogRecord($"Новый продукт {addedVersion.ProductName} успешно добавлен");
                 }
@@ -162,6 +162,13 @@ namespace repository {
             return true; */
 
             return _products.Where(product => product.GetProductName() == addedVersion.ProductName).SingleOrDefault() == null ? true : false;
+
+            /*
+             * Можно проще:
+             * return !_products.Any(product => product.GetProductName() == addedVersion.ProductName);
+             * 
+             * И еще, метод лучше переименовать в IsProductUnique()
+             */
         }
 
         /// <summary>
@@ -176,6 +183,10 @@ namespace repository {
             } */
 
             _products.Where(product => product.GetProductName() == addedVersion.ProductName).SingleOrDefault()?.AddVersion(addedVersion); 
+
+            /*
+             * Тут лучше использовать метод GetProduct, а не копипастить его код. 
+             */
         }
 
         /// <summary>
@@ -218,35 +229,16 @@ namespace repository {
 
             _log.LogRecord("Обновляемой версии продукта не существует");
 
+            /*Здесь тоже можно было бы немного "упростить" код, если сначала проверить currentVersion == null. Тогда бы внутри if было только две строки кода, а не 3*/
+
         }
 
-        /*
-         * Обычно в web-приложениях такие сервисы - это часть бэкэнда. А он может не быть консольным приложение, так что консоли там может просто не оказаться. Но 
-         * сама идея записывать информацию об изменениях - правильная. Просто ее нужно писать в лог. Я тебе предлагаю при создании класса передать ему объект, реализцющий интерфейс 
-         * ILogger с методом Log(), и в качестве реализации использовать обертку над консолью. Что-то вроде: 
-         * class ConsoleLogger: ILogger
-         * {
-         *    public void Log(string logText) {
-         *      Console.WriteLine(logText);
-         *    }
-         * }
-         * 
-         * Такой подход позволит тебе потом вместо консольного логгера использовать файловый логгер, например. 
-         */
-
-
-
-        /*
-         * ПРАВКИ:
-         * 1) Добавил интерфейс ILogger и реализующий его класс ConsoleLogger. В класс ProductRepository теперь дополнительно передается один параметр
-         * типа ILogger, и сообщения об изменениях теперь записываются в лог с помощью функции интерфейса LogRecord(), а не напрямую в консоль.
-        */
-
+       
         /// <summary>
         /// Метод для удаления конкретной версии (и, возможно, продукта) из репозитория
         /// </summary>
         public void RemoveVersion(string productName, string productVersion) {
-            Version removedVersion = GetProductConcreteVersion(productName, productVersion);
+            Version removedVersion = GetProductConcreteVersion(productName, productVersion); /*лучше переменную назвать versionToRemove*/
 
             if (removedVersion != null && _versions.Contains(removedVersion)) {
                     _versions.Remove(removedVersion);
@@ -283,6 +275,11 @@ namespace repository {
             }
         }
         
+        /*
+         * CheckCorrectProductVersion переводится как "проверить корректную версию продукта", а ты хочешь проверить версию на корректность. Так что, 
+         * лучше IsProductVersionCorrect(string productVersion);
+         */
+
         /// <summary>
         /// Метод для проверки корректности введенного номера версии
         /// </summary>
