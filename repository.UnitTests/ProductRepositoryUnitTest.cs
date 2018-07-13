@@ -83,7 +83,7 @@ namespace repository.UnitTests {
             Product stubProduct = new Product(FactoryMethodCreateNewVersion("1.1.1"));
 
             //Act
-           // productRepository.AddVersion(version);
+           // CurrentProductRepository.AddVersion(version);
 
             //Assert
             //Assert.AreEqual("Номер версии введен некорректно", stubLogger.GetLastLogMessage());
