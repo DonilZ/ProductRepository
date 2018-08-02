@@ -7,17 +7,7 @@ namespace repository {
     /// <summary>
     /// Класс, содержащий информацию о файле (имя файла, URL файла)
     /// </summary>
-    /// <typeparam name="T">Тип имени файла</typeparam>
-    /// <typeparam name="K">Тип URL файла</typeparam>
-    /*
-     * А зачем здесь параметры T и K теперь? Они же всегда string?
-     */
-
-    /*
-     * ПРАВКИ:
-     * 1) Убрал параметры-типы из класса FileInfo
-    */
-    public class FileInfo{
+       public class FileInfo{
 		public string FileName { get; set; }
 		public string FileUrl { get; set; }
 	}
@@ -59,6 +49,21 @@ namespace repository {
         /// Перегрузка метода Equals для объектов класса Version
         /// </summary>
         public override bool Equals(object obj) {
+
+            /*
+             * Здесь у тебя проверка на null и приведение типа как-то не очень понятно сделано. Можно так: 
+             *      var version = obj as Version;
+             *      if (version == null) return false;
+             *      
+             *  И еще, в C# 7, если не ошибаюсь, появился синтаксис pattern matching, который вообще в одну строку позволяет это записать.
+             *  Но я лично этот синтаксис не могу запомнить, а кроме того, некоторым он потом непонятен при чтении кода. Поэтому можешь посмотреть,
+             *  а использовать - по желанию.
+             *  
+             *  
+             *  И еще, обращаю внимание на то, что ты перегруженное равенство в Linq запросах к СУБД использовать уже не сможешь, т.к. они
+             *  выполняются в реде SQL-сервера, а не в среде исполнения .net, как сейчас в случае со списками. Но это просто к сведению на будущее.
+             */
+
             if (obj == null) return false;
 
             Version version = obj as Version;
@@ -141,45 +146,12 @@ namespace repository {
         }
 
 
-        /*
-         * В комментарии ты пишешь, какая проверка версии происходит, а название этого не отражает. Нужно переименовать метод в NewVersionIsGreaterThenLatest().
-         * Тогда и место его вызова будет читаться гораздо легче
-         */
-
-         /*
-          * И еще, предлагаю везде addedVersion заменить на newVersion. По сути версия-то новая (new), а не добавленная (added). Она ведь только добавляется на этот момент.
-          */
-
-         /*
-         * ПРАВКИ:
-         * 1) Изменил название метода с CheckAddedVersion() на NewVersionIsGreaterThenLatest()
-         * 2) Изменил имя переменной-параметра addedVersion на newVersion
-         */
-
         /// <summary>
         /// Метод для проверки добавляемой версии на то, является ли она старее последней.
         /// </summary>
         private bool NewVersionIsGreater(Version newVersion) {
-            
-            /*
-             * ПРАВКИ:
-             * 1) Добавил рекурсивную функцию IsNewVersion(), проверяющая актуальность добавляемой версии. Каждая цифра в номере добавляемой версии
-             * проверяется с соответствующей цифрой последней версией текущего продукта (соответствие поддерживается с помощью index).
-             */
-
-
-            /*
-             * Да, с этой функцией лучше. Ниже по тексту некоторые комментарии к ней есть. Еще, я для примера написал другую реализацию рекурсивного подхода, с использованием
-             * enumerator-ов. Посмотри в качестве альтернативы. 
-             */
-
-            /*
-             * ПРАВКИ:
-             * 1) С вашего позволения оставлю вашу реализацию этого рекурсивного метода. Полностью в ней разобрался, намного лучше и понятнее и, главное, полезно.
-             * В моей реализации мне не нравится момент с index в качестве параметра и с его инкрементацией (выглядит как реализация из олимпиадного программирования)
-             */
-
-            string[] latest = _latestVersion.ProductVersion.Split('.');  /*Т.к. функция выхывается несколько раз, то получается, что разбивка строки будет происходить несколько раз*/
+           
+            string[] latest = _latestVersion.ProductVersion.Split('.');  
             string[] added = newVersion.ProductVersion.Split('.');
 
             return _allVersions.Count < 0 || IsNewVersion(0, latest, added) ? true : false;
@@ -187,27 +159,12 @@ namespace repository {
 
         private bool IsNewVersion(int index, /*Version newVersion,*/ string[] latest, string[] added) {
 
-            // string[] latest = _latestVersion.ProductVersion.Split('.');  /*Т.к. функция выхывается несколько раз, то получается, что разбивка строки будет происходить несколько раз*/
-           // string[] added = newVersion.ProductVersion.Split('.'); 
 
             if (index == added.Count()) return false;
 
             if (Convert.ToInt32(added[index]) > Convert.ToInt32(latest[index])) {
                 return true;
             } 
-
-            /*
-             * Если выполнилось условие и после него идет return, то выполнение дальше не пойдет, а значит, 
-             * и else лишний. Достаточно просто if. А в последнем блоке просто return false;
-             */
-
-             /*
-              * ПРАВКИ:
-              * 1) Убрал лишние else.
-              * 2) Перенес разбиение строк с номерами добавляемой и последней версий из рекурсивной функции IsNewVersion() в метод NewVersionIsGreaterThenLatest()
-              * теперь они разбиваются только один раз и массивы с разбитыми по частям версиями передаются в качестве параметров в функцию IsNewVersion().
-              * И, как следствие, параметр (Version newVersion) теперь не нужен в функции IsNewVersion(). 
-              */
 
             if (Convert.ToInt32(added[index]) == Convert.ToInt32(latest[index])) {
                 return IsNewVersion(++index, latest, added);
@@ -263,7 +220,3 @@ namespace repository {
     
 }
 
-/*
- ПРАВКИ:
- 1) Добавил перегрузку методов Equals в класса Version и Product
-*/
