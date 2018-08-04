@@ -1,5 +1,7 @@
 using NUnit.Framework;
+using System.Collections.Generic;
 using repository;
+using Moq;
 
 namespace repository.UnitTests {
 
@@ -8,21 +10,18 @@ namespace repository.UnitTests {
     /// </summary>
     [TestFixture]
     public class ProductRepositoryUnitTest {
+        private string _lastMessageFromLog;
         public ProductRepository CurrentProductRepository { get; set; }
-        public FakeLogger MockLogger { get; set; }
+        public Mock<ILogger> MockLogger { get; set; }
 
         [SetUp]
         public void SetUp() {
-            MockLogger = new FakeLogger();
-            CurrentProductRepository = ProductRepository.GetInstance(MockLogger);
-            
-            CurrentProductRepository.SetLogger(MockLogger);
-            CurrentProductRepository.ClearProductsAndVersions();
+            MockLogger = new Mock<ILogger>();
+            MockLogger.Setup(m => m.LogRecord(It.IsAny<string>())).Callback<string>((message) => _lastMessageFromLog = message);
+            CurrentProductRepository = new ProductRepository(MockLogger.Object);
         }
 
-        /// <summary>
-        /// Тестирование метода IsProductVersionCorrect() класса ProductRepository на сценарий ввода некорректного номера версии 
-        /// </summary>
+
         [TestCase("0")]
         [TestCase("123456")]
         [TestCase("1.")]
@@ -34,20 +33,18 @@ namespace repository.UnitTests {
         [TestCase("1.1.1.1")]
         [TestCase("1.fd.1")]
         [TestCase("a.1.q")]
-        public void IsProductVersionCorrect_EnteredIncorrectProductVersion_ReturnsFalse(string productVersion) {
+        public void IsProductVersionCorrect_EnteredIncorrectProductVersion_ReturnsFalse(string incorrectProductVersion) {
             //Arrange
             
 
             //Act
-            bool result = CurrentProductRepository.IsProductVersionCorrect(productVersion);
+            bool result = CurrentProductRepository.IsProductVersionCorrect(incorrectProductVersion);
 
             //Assert
             Assert.False(result);
         }
 
-        /// <summary>
-        /// Тестирование метода IsProductVersionCorrect() класса ProductRepository на сценарий ввода корректного номера версии 
-        /// </summary>
+
         [TestCase("123456.1234567.12345678")]
         [TestCase("1.1.1")]
         [TestCase("0.0.0")]
@@ -61,40 +58,63 @@ namespace repository.UnitTests {
             Assert.True(result);
         }
 
-        /// <summary>
-        /// Тестирование метода AddVersion() класса ProductRepository на сценарий попытки добавления версии с некорректным номером
-        /// </summary>
+
         [Test]
         public void AddVersion_EnteredIncorrectProductVersion_WriteToLogAboutIncorrectEnteredProductVersion() {
             //Arrange
-            Version version = FactoryMethodCreateNewVersion(".1.1.");
+            Version version = CreateNewVersion(".1.1.");
 
-            //Act
+            //Act           
             CurrentProductRepository.AddVersion(version);
 
             //Assert
-            Assert.AreEqual("Номер версии введен некорректно", MockLogger.GetLastLogMessage());
+            string expectedMessage = "Номер версии введен некорректно";
+            string factMessage = _lastMessageFromLog;
+
+            Assert.AreEqual(expectedMessage, factMessage);
         }
 
-        [Ignore("Тест не готов")]
+
         [Test]
-        public void AddVersion_NewProductVersionIsNotNew_WriteToLogAboutNotNewProductVersion() {
+        public void AddVersion_SuccessfullAddNewProductAndNewVersionInRepository_AddedNewProductAndNewVersionInRepository() {
             //Arrange
-            Product stubProduct = new Product(FactoryMethodCreateNewVersion("1.1.1"));
+            Version newVersion = CreateNewVersion("1.1.1");
 
             //Act
-           // CurrentProductRepository.AddVersion(version);
+            CurrentProductRepository.AddVersion(newVersion);
 
             //Assert
-            //Assert.AreEqual("Номер версии введен некорректно", stubLogger.GetLastLogMessage());
+            bool resultWasProductAdded = CurrentProductRepository.IsThereProduct(new Product(newVersion));
+            bool resultWasVersionAdded = IsThereVersion(newVersion);
 
-            /*
-                В данном тесте я проверяю сценарий единицы работы AddVersion, при котором добавляемая версия продукта
-                не является новой. То есть, мне необходимо искусственно вызывать вот эту проверку в методе AddVersion:
-                "if (productFromDatabase != null && !productFromDatabase.NewVersionIsGreaterThenLatest(newVersion))"
-                Но продукт же мы получаем прямо в этом методе при помощи GetProduct() и непонятно, как нам проверить
-                этот сценарий.
-            */
+            Assert.True(resultWasProductAdded);
+            Assert.True(resultWasVersionAdded);        
+        }
+
+
+        [TestCase("1.1.0")]
+        [TestCase("1.0.1")]
+        [TestCase("0.1.1")]
+        [TestCase("0.0.1")]
+        [TestCase("0.1.0")]
+        [TestCase("1.0.0")]
+        [TestCase("1.1.1")]
+        [TestCase("0.0.0")]
+        public void AddVersion_UnsuccessfulAdditionOfVersionBecauseItIsNotNew_WriteToLogAboutNotNewVersion(string oldVersionNumber) {
+            //Arrange
+            Version latestVersion = CreateNewVersion("1.1.1");
+            Version oldVersion = CreateNewVersion(oldVersionNumber);
+
+            CurrentProductRepository.AddVersion(latestVersion);
+
+            //Act
+            CurrentProductRepository.AddVersion(oldVersion);
+
+            //Assert
+            string expectedMessage = "Данная версия не может быть добавлена, так как не является новой";
+            string factMessage = _lastMessageFromLog;
+
+            Assert.AreEqual(expectedMessage, factMessage);
 
             /*
              * Не совсем понял вопрос. Но попробую просто описать схему теста, который ты, как я понял, хочешь написать. 
@@ -102,156 +122,204 @@ namespace repository.UnitTests {
              * версию этого же продукта, но меньшую по номеру. В секции Assert проверь, что в логгер записано правильное сообщение. На первый взгляд проблем
              * в этом вроде нет. Если есть, то опиши их еще раз, плс.
              */
+            
+            /*
+             * Сделал, как вы сказали, теперь все понял.
+             */
 
         }
 
-        /// <summary>
-        /// Тестирование метода AddVersion() класса ProductRepository на сценарий успешного добавления новой версии и нового продукта в репозиторий
-        /// </summary>
-        [Test]
-        public void AddVersion_SuccessfullAddNewProductAndNewVersionInRepository_AddedNewProductAndNewVersionInRepository() {
+
+        [TestCase("1.1.2")]
+        [TestCase("1.2.1")]
+        [TestCase("2.1.1")]
+        [TestCase("2.2.1")]
+        [TestCase("2.1.2")]
+        [TestCase("1.2.2")]
+        [TestCase("2.2.2")]
+        [TestCase("1.1.10")]
+        public void AddVersion_SuccessfullAdditionNewVersionInListOfAlreadyExistingProduct_AddedNewVersionInListOfProductVersionsAndNotDeleteOldVersion(string newVersionNumber) {
             //Arrange
-            Version version = FactoryMethodCreateNewVersion("1.1.1");
+            Version latestVersion = CreateNewVersion("1.1.1");
+            Version newVersion = CreateNewVersion(newVersionNumber);
+
+            CurrentProductRepository.AddVersion(latestVersion);
 
             //Act
-            CurrentProductRepository.AddVersion(version);
-
-            //Assert
-            Assert.True(CurrentProductRepository.GetCountProducts() == 1);
-            Assert.True(CurrentProductRepository.GetCountVersions() == 1);
-
-            Assert.True(CurrentProductRepository.IsThereProduct(new Product(version)));
-            Assert.True(CurrentProductRepository.IsThereVersion(version));        
-        }
-
-        /// <summary>
-        /// Тестирование метода AddVersion() класса ProductRepository на сценарий успешного добавления новой версии уже существующего продукта в репозиторий
-        /// </summary>
-        [Test]
-        public void AddVersion_SuccessfullAddNewVersionButNotNewProduct_AddedNewVersionInRepositoryAndNewVersionInListOfProductVersions() {
-            //Arrange
-            Version firstVersion = FactoryMethodCreateNewVersion("1.1.1");
-            Version newVersion = FactoryMethodCreateNewVersion("1.1.2");
-
-            //Act
-            CurrentProductRepository.AddVersion(firstVersion);
             CurrentProductRepository.AddVersion(newVersion);
 
             //Assert
-            Assert.True(CurrentProductRepository.GetCountProducts() == 1);
-            Assert.True(CurrentProductRepository.GetCountVersions() == 2);
+            bool isRepositoryContainLatestVersion = CurrentProductRepository.GetProductVersions(latestVersion.ProductName).Contains(latestVersion);
+            bool isRepositoryContainNewVersion = CurrentProductRepository.GetProductVersions(latestVersion.ProductName).Contains(newVersion);
 
-            Assert.True(CurrentProductRepository.GetProductVersions(firstVersion.ProductName).Count == 2);
-
-            Assert.True(CurrentProductRepository.GetProductVersions(firstVersion.ProductName).Contains(firstVersion));
-            Assert.True(CurrentProductRepository.GetProductVersions(firstVersion.ProductName).Contains(newVersion));         
+            Assert.True(isRepositoryContainLatestVersion);
+            Assert.True(isRepositoryContainNewVersion);         
         }
 
-        /// <summary>
-        /// Тестирование метода UpdateVersion() класса ProductRepository на сценарий попытки обновления несуществующей в репозитории версии
-        /// </summary>
+
         [Test]
         public void UpdateVersion_UpdatableVersionNotFoundInRepository_WriteToLogAboutNonExistentUpdatableVersion() {
             //Arrange
-            Version updatableVersion = FactoryMethodCreateNewVersion("1.1.1");
+            Version updatableVersion = CreateNewVersion("1.1.1");
 
             //Act
             CurrentProductRepository.UpdateVersion(updatableVersion);
 
             //Assert
-            Assert.AreEqual("Обновляемой версии продукта не существует!", MockLogger.GetLastLogMessage());         
+            string expectedMessage = "Обновляемой версии продукта не существует!";
+            string factMessage = _lastMessageFromLog;
+
+            Assert.AreEqual(expectedMessage, factMessage);         
         }
+
         
-        /// <summary>
-        /// Тестирование метода UpdateVersion() класса ProductRepository на сценарий успешного обновления продукта в репозитории
-        /// </summary>
         [Test]
         public void UpdateVersion_UpdatableVersionExistInRepository_UpdateVersionInRepositoryAndWriteToLogThisReport() {
             //Arrange
-            Version firstVersion = FactoryMethodCreateNewVersion("1.1.1");
+            Version firstVersion = CreateNewVersion("1.1.1");
+
+            CurrentProductRepository.AddVersion(firstVersion);
 
             FileInfo newFileInfo = new FileInfo();
             newFileInfo.FileName = "newFileName";
             newFileInfo.FileUrl = "newFileUrl";
+
             Version newVersion = new Version(firstVersion.ProductName, firstVersion.ProductVersion, "newShortDesc", "newLongDesc", "newChanges", newFileInfo);
 
             //Act
-            CurrentProductRepository.AddVersion(firstVersion);
             CurrentProductRepository.UpdateVersion(newVersion);
 
             //Assert
-            Assert.False(CurrentProductRepository.IsThereVersion(FactoryMethodCreateNewVersion("1.1.1")));
-            Assert.True(CurrentProductRepository.IsThereVersion(newVersion));
-            Assert.AreEqual($"Версия {firstVersion.ProductVersion} продукта {firstVersion.ProductName} успешно обновлена", MockLogger.GetLastLogMessage());       
+            bool isFirstVersionExistInRepository = IsThereVersion(CreateNewVersion("1.1.1"));
+            bool isUpdatableVersionExistInRepository = IsThereVersion(newVersion);
+
+            string expectedMessage = $"Версия {firstVersion.ProductVersion} продукта {firstVersion.ProductName} успешно обновлена";
+            string factMessage = _lastMessageFromLog;
+
+            Assert.False(isFirstVersionExistInRepository);
+            Assert.True(isUpdatableVersionExistInRepository);
+            Assert.AreEqual(expectedMessage, factMessage);       
         }
 
-        /// <summary>
-        /// Тестирование метода RemoveVersion() класса ProductRepository на сценарий попытки удаления несуществующей в репозитории версии
-        /// </summary>
+
         [Test]
         public void RemoveVersion_RemovableVersionNotFoundInRepository_WriteToLogAboutNonExistentRemovableVersion() {
             //Arrange
-            Version removableVersion = FactoryMethodCreateNewVersion("1.1.1");
+            Version removableVersion = CreateNewVersion("1.1.1");
 
             //Act
             CurrentProductRepository.RemoveVersion(removableVersion.ProductName, removableVersion.ProductVersion);
 
             //Assert
-            Assert.AreEqual("Удаляемой версии продукта не существует!", MockLogger.GetLastLogMessage());
+            string expectedMessage = "Удаляемой версии продукта не существует!";
+            string factMessage = _lastMessageFromLog;
+
+            Assert.AreEqual(expectedMessage, factMessage);
         }
 
-        /// <summary>
-        /// Тестирование метода RemoveVersion() класса ProductRepository на сценарий успешного удаления версии и продукта из репозитория
-        /// (версия являлась единственной версией продукта)
-        /// </summary>
-        [Test]
-        public void RemoveVersion_RemovableVersionExistInRepositoryAndThisVersionIsTheOnlyInTheListOfProductVersions_RemoveVersionFromRepositoryAndRemoveProductFromRepositoryAndWriteToLogThisReport() {
-            //Arrange
-            Version removableVersion = FactoryMethodCreateNewVersion("1.1.1");
 
-            //Act
+        /*
+         * Ниже я переименовал два тестовых метода. Сравни их, плс, и обрати внимание на то, что я убрал из названия то, 
+         * что проверяется удаления версии из списка версий из списка версий продукта. С точки зрения пользователя репозитория 
+         * не важно, как он хранит версии и продукты. Тут важно только то, что если удаляется версия продукта и она одна, то удаляется 
+         * и весь продукт, а если не одна - то продукт остается. 
+         * Можно, конечно, как-то тестировать согласованность списков, но ведь эта согласованность нужно для нормальной работы репозитория? 
+         * Если нужна, то тогда она будет косвенно проверена через публичное API. А если не нужна, то тогда возникнет вопрос, зачем она вообще нужна.
+         * Собственно, это и есть аргумент в пользу того, чтобы тестировать только публичное API класса)
+         * 
+         * И еще один момент. Такое именования тестовых методов нацелено ведь на то, чтобы они читались как чек-лист в документации. И в общем, они 
+         * так и читаются. В этом случае не являются ли tripple slash - комменты к ним излишними? 
+         */
+
+        /*
+         * ПРАВКИ:
+         * 1) Насчет названий понял (исправлено), действительно, проверяю лишнее.
+         * 2) Tripple slash комментарии у тестовых методов убрал. 
+         */
+
+
+        [Test]
+        public void RemoveVersion_TheProductHasOnlyOneVersion_RemovesTheVersionAndTheProductAndWritesThisToLog() {
+            //Arrange
+            Version removableVersion = CreateNewVersion("1.1.1");
             CurrentProductRepository.AddVersion(removableVersion);
+
+            //Act
             CurrentProductRepository.RemoveVersion(removableVersion.ProductName, removableVersion.ProductVersion);
 
             //Assert
-            Assert.False(CurrentProductRepository.IsThereVersion(removableVersion));
-            Assert.False(CurrentProductRepository.IsThereProduct(new Product(removableVersion)));
-            Assert.AreEqual($"Продукт {removableVersion.ProductName} успешно удален", MockLogger.GetLastLogMessage());
+            bool isRemovedVersionExistInRepository = IsThereVersion(removableVersion);
+            bool isRemovedProductExistInRepository = CurrentProductRepository.IsThereProduct(new Product(removableVersion));
+
+            string expectedMessage = $"Продукт {removableVersion.ProductName} успешно удален";
+            string factMessage = _lastMessageFromLog;
+
+            Assert.False(isRemovedVersionExistInRepository);
+            Assert.False(isRemovedProductExistInRepository);
+            Assert.AreEqual(expectedMessage, factMessage);
         }
 
 
-        /// <summary>
-        /// Тестирование метода RemoveVersion() класса ProductRepository на сценарий успешного удаления версии из репозитория и из списка 
-        /// версий соответствующего продукта (версия не являлась единственной версией продукта)
-        /// </summary>
         [Test]
-        public void RemoveVersion_RemovableVersionExistInRepositoryAndThisVersionIsTheNotOnlyInTheListOfProductVersions_RemoveVersionFromRepositoryAndRemoveThisVersionFromListOfProductVersionsAndWriteToLogThisReport() {
+        public void RemoveVersion_TheProductHasMoreThanOneVersion_RemovesTheVersionAndWritesThisToLog() {
             //Arrange
-            Version firstVersion = FactoryMethodCreateNewVersion("1.1.1");
-            Version removableVersion = FactoryMethodCreateNewVersion("1.1.2");
+            Version firstVersion = CreateNewVersion("1.1.1");
+            Version removableVersion = CreateNewVersion("1.1.2");
 
-            //Act
             CurrentProductRepository.AddVersion(firstVersion);
             CurrentProductRepository.AddVersion(removableVersion);
+
             Product product = CurrentProductRepository.GetProduct(firstVersion.ProductName);
 
+            //Act
             CurrentProductRepository.RemoveVersion(removableVersion.ProductName, removableVersion.ProductVersion);
 
             //Assert
-            Assert.False(CurrentProductRepository.IsThereVersion(removableVersion));
-            Assert.True(CurrentProductRepository.IsThereProduct(product));
-            Assert.False(product.GetAllVersions().Contains(removableVersion));
-            Assert.AreEqual($"Версия {removableVersion.ProductVersion} продукта {removableVersion.ProductName} успешно удалена", MockLogger.GetLastLogMessage());
+            bool productStillExistsInRepository = CurrentProductRepository.IsThereProduct(product);
+            bool isRemovedVersionExistInRepository = IsThereVersion(removableVersion);
+
+            string expectedMessage = $"Версия {removableVersion.ProductVersion} продукта {removableVersion.ProductName} успешно удалена";
+            string factMessage = _lastMessageFromLog;
+
+            Assert.True(productStillExistsInRepository);
+            Assert.False(isRemovedVersionExistInRepository);
+            Assert.AreEqual(expectedMessage, factMessage);
         }
 
+
         /// <summary>
-        /// Фабричный метод для создания объектов класса Version
+        /// Метод для создания объектов класса Version
         /// </summary>
-        private Version FactoryMethodCreateNewVersion(string productVersion) {
+        private Version CreateNewVersion(string productVersion) {
+
+
+             /*
+             * Это не является реализацией фабричного метода. Ты просто вынес повторяющийся код по созданию объекта в отдельный метод. Предлагаю 
+             * посмотреть описание Фабрик и Фабричных методов.
+             */
+
+             /*
+              * ПРАВКИ:
+              * 1) Исправил название метода CreateNewVersion() на CreateNewVersion(). Просто в книге The Art of Unit Testing
+              * автор почему-то назвал похожий метод фабричным я, видимо, не так понял. Обязательно перечитаю про Фабричный метод и Фабрику
+              */
+
+
             FileInfo fileInfo = new FileInfo();
             fileInfo.FileName = "fileName";
             fileInfo.FileUrl = "fileUrl";
+
             return new Version("productName", productVersion,"shortDesc", "longDesc", "changes", fileInfo);
+        }
+
+
+        /// <summary>
+        /// Метод для проверки существования версии в репозитории
+        /// </summary>
+        private bool IsThereVersion(Version version) {
+            List<Version> versions = CurrentProductRepository.GetProductVersions(version.ProductName);
+
+            return versions == null ? false : versions.Contains(version);
         }
 
 

@@ -61,14 +61,19 @@ namespace repository {
              *  
              *  
              *  И еще, обращаю внимание на то, что ты перегруженное равенство в Linq запросах к СУБД использовать уже не сможешь, т.к. они
-             *  выполняются в реде SQL-сервера, а не в среде исполнения .net, как сейчас в случае со списками. Но это просто к сведению на будущее.
+             *  выполняются в среде SQL-сервера, а не в среде исполнения .net, как сейчас в случае со списками. Но это просто к сведению на будущее.
              */
 
-            if (obj == null) return false;
+            /*
+             * ПРАВКИ:
+             * 1) Исправил свою реализацию проверки на null.
+             * 
+             * ВОПРОСЫ:
+             * 1) А что необходимо предпринять в таком случае? Просто без этой перегрузки некорректно сравниваются объекты.
+             */
 
-            Version version = obj as Version;
-
-            if (version as Version == null) return false;
+            var version = obj as Version;
+            if (version == null) return false;
 
             return this.ProductName == version.ProductName && this.ProductVersion == version.ProductVersion
                     && this.ShortDescription == version.ShortDescription && this.LongDescription == version.LongDescription

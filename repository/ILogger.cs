@@ -32,26 +32,11 @@ namespace repository {
      * Предлагаю следующим шагом посмотреть библиотеку Moq и попробовать FakeLogger сделать с ее помощью.
      */
 
-    /// <summary>
-    /// Класс поддельного логгера с целью его подставки для тестирования
-    /// </summary>
-    public class FakeLogger : ILogger {
-        private string _lastLogMessage;
+     /*
+      * ПРАВКИ:
+      * 1) Реализовал FakeLogger при помощи средств библиотеки Moq, а собственную реализацию FakeLogger убрал 
+      */
 
-        /// <summary>
-        /// Метод для записи последнего лога в поле _lastLogMessage
-        /// </summary>
-        public void LogRecord(string textLog) {
-            _lastLogMessage = textLog;
-        }
-
-        /// <summary>
-        /// Метод для получения последнего лога
-        /// </summary>
-        public string GetLastLogMessage() {
-            return _lastLogMessage;
-        }
-    }
 
     
 }

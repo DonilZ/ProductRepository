@@ -9,7 +9,7 @@ namespace repository
         static void Main(string[] args)
         {
             ILogger logger = new ConsoleLogger();
-            ProductRepository currentProductRepository = ProductRepository.GetInstance(logger);
+            ProductRepository currentProductRepository = new ProductRepository(logger);
 
             UserShellGet currentUserShellGet = new UserShellGet(currentProductRepository);
             UserShell currentUserShell = new UserShell(currentProductRepository);

@@ -167,12 +167,6 @@ namespace repository {
             file.FileUrl = Console.ReadLine();
 
             return new Version(productName, productVersion, shortDescription, longDescription, changes, file);
-
-            /*можно просто 
-             * return new Version(productName, productVersion, shortDescription, longDescription, changes, file);
-             * исправлено
-            */
-
         }
     }
 }

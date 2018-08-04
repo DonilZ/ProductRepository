@@ -8,22 +8,14 @@ namespace repository {
     ///Класс, имитирующий работу с базой данных (хранение версий и продуктов, получение необходимой информации о версиях и продуктах, добавление, обновление и удаление версий и продуктов) 
     ///</summary>
     public class ProductRepository {
-        private static ProductRepository _singletonInstance; /*это ведь как раз ссылка на singleton? Тогда лучше _singletonInstance*/
         private List<Version> _versions;
         private List<Product> _products;
 
         private ILogger _logger; 
 
-        private ProductRepository(ILogger logger) {
+        public ProductRepository(ILogger logger) {
             _versions = new List<Version>();
             _products = new List<Product>();
-            _logger = logger;
-        }
-
-        /// <summary>
-        /// Метод для установки значения поля _logger
-        /// </summary>
-        public void SetLogger (ILogger logger) {
             _logger = logger;
         }
 
@@ -59,13 +51,12 @@ namespace repository {
          * https://stackoverflow.com/a/228380
          */
 
-        /// <summary>
-        /// Метод для создания объекта класса ProductRepository (если объект уже был создан, то метод вернет этот объект)
-        /// </summary>
-        public static ProductRepository GetInstance(ILogger logger) {
-
-            return _singletonInstance = _singletonInstance ?? new ProductRepository(logger); 
-        }
+         /*
+          * ПРАВКИ:
+          * 1) Перевел репозиторий из синглтона в обычный инстанс класса.
+          * 2) Убрал метод SetLogger()
+          * 3) В тестовом SetUp теперь создается новый объект репозитория, в которой передается в качестве параметра фейковый логгер.
+          */
 
         /// <summary>
         /// Метод для получения общего списка всех продуктов, находящихся в репозитории
@@ -78,8 +69,12 @@ namespace repository {
         /// Метод для получения общего списка всех версий конкретного продукта
         /// </summary>
         public List<Version> GetProductVersions(string productName) { 
-            return _products.Where(product => product.GetProductName() == productName).SingleOrDefault()?.GetAllVersions(); 
+            return _products.SingleOrDefault(product => product.GetProductName() == productName)?.GetAllVersions(); 
             /* SingleOrDefault сам принимает предикат, так что можно where в данном случае вообще убрать, а предикат перенести. То же есть и ниже по коду  */
+            /*
+             * ПРАВКИ:
+             * 1) Переместил предикат и убрал Where во всех местах. 
+             */
         }
 
         /// <summary>
@@ -88,7 +83,7 @@ namespace repository {
         public Version GetProductConcreteVersion(string productName, string productVersion) {
             List<Version> currentVersions = GetProductVersions(productName);
 
-            return currentVersions?.Where(version => version.ProductVersion == productVersion).SingleOrDefault();
+            return currentVersions?.SingleOrDefault(version => version.ProductVersion == productVersion);
         }
 
         /// <summary>
@@ -114,29 +109,39 @@ namespace repository {
              * А потом достаточно проверить, что добавляемая версия больше последней (а для нового продукта это всегда так, т.к. последней версии еще нет) и 
              * выйти, если версия не больше. 
              * 
-             * И уже оставшийся код просто добавит все данные в списки. Правда, продукт нужно добавлять только если он вновь созданные. Но ты можешь 
+             * И уже оставшийся код просто добавит все данные в списки. Правда, продукт нужно добавлять только если он вновь созданный. Но ты можешь 
              * процедуру добавления продукта сделать такой, чтобы она не добавляла продукт, если он уже есть. Возможно, в этом случае оптимальность выполнения 
              * будет пониже, но читаться код будет еще легче, с моей точки зрения.
              */
 
-            /* (1) */
+            /*
+             * ПРАВКИ:
+             * 1) Добавил метод IsThereProduct() для проверки продукта на уникальность
+             *
+             * ВОПРОСЫ:
+             * 1) Вы сказали, что у нового продукта еще нет последней версии, но при создании нового объекта Product
+             * в конструктор мы передаем версию (единственную на момент создания) этого продукта, которая сразу записывается как
+             * последняя версия только что созданного продукта. Мне кажется это правильным, потому что не может продукта, который сразу
+             * после создания совсем не содержит никаких версий, да и вообще не может быть продукта без версий. 
+             * Поэтому, в моем случае, сокращение проверки не получится. Нужно ли этот момент исправить?
+             */
+
             if (!IsProductVersionCorrect(newVersion.ProductVersion)) {
                 _logger.LogRecord("Номер версии введен некорректно");
                 return;
             }
 
-            Product productFromDatabase = GetProduct(newVersion.ProductName);
+            Product potentiallyNewProduct = GetProduct(newVersion.ProductName) ?? new Product(newVersion);
 
-  /* (2) */ if (productFromDatabase != null && !productFromDatabase.NewVersionIsGreaterThenLatest(newVersion)) {
+            if (IsThereProduct(potentiallyNewProduct) && !potentiallyNewProduct.NewVersionIsGreaterThenLatest(newVersion)) {
                 _logger.LogRecord("Данная версия не может быть добавлена, так как не является новой");
                 return;
             }
 
-            if (productFromDatabase == null) {
+            if (!IsThereProduct(potentiallyNewProduct)) {
                 
-                productFromDatabase = new Product(newVersion);
+                _products.Add(potentiallyNewProduct);
 
-                _products.Add(productFromDatabase);
                 _logger.LogRecord($"Новый продукт {newVersion.ProductName} успешно добавлен");
             }
             else {
@@ -146,6 +151,15 @@ namespace repository {
             _versions.Add(newVersion);
                 
             _logger.LogRecord($"Версия {newVersion.ProductVersion} продукта {newVersion.ProductName} успешно добавлена");
+        }
+
+        /// <summary>
+        /// Метод для проверки продукта на уникальность
+        /// </summary>
+        public bool IsThereProduct(Product potentiallyNewProduct) {
+            string namePotentiallyNewProduct = potentiallyNewProduct.GetProductName();
+
+            return GetProduct(namePotentiallyNewProduct) != null;
         }
 
         /// <summary>
@@ -159,15 +173,15 @@ namespace repository {
         /// Метод для получения конкретного продукта из репозитория по имени этого продукта
         /// </summary>
         public Product GetProduct(string productName) {
-            return _products.Where(product => product.GetProductName() == productName).SingleOrDefault();
+            return _products.SingleOrDefault(product => product.GetProductName() == productName);
         }
 
         /// <summary>
         /// Метод для обновления конкретной версии в репозитории
         /// </summary>
         public void UpdateVersion(Version updatedVersion) {
-            Version currentVersion = _versions.Where(version => version.ProductName == updatedVersion.ProductName && 
-                                                    version.ProductVersion == updatedVersion.ProductVersion).SingleOrDefault();
+            Version currentVersion = _versions.SingleOrDefault(version => version.ProductName == updatedVersion.ProductName && 
+                                                                version.ProductVersion == updatedVersion.ProductVersion);
 
             if (currentVersion == null) {
                 _logger.LogRecord("Обновляемой версии продукта не существует!");
@@ -202,7 +216,7 @@ namespace repository {
         /// Метод для удаления конкретного продукта из репозитория
         /// </summary>
         private void RemoveProduct(Version removedVersion) {
-            Product currentProduct = _products.Where(product => product.GetAllVersions().Contains(removedVersion)).SingleOrDefault();
+            Product currentProduct = _products.SingleOrDefault(product => product.GetAllVersions().Contains(removedVersion));
             currentProduct.RemoveVersion(removedVersion);
             
             if (!currentProduct.GetAllVersions().Any()) {
@@ -217,12 +231,13 @@ namespace repository {
         public bool IsProductVersionCorrect(string productVersion) {
             try {
                 string[] splitedVersion = productVersion.Split('.');
+                int countOfNumbersInVersion = 3;
 
-                if (splitedVersion.Length != 3) return false;
+                if (splitedVersion.Length != countOfNumbersInVersion) return false;
 
                 int summedNumbersVersion = 0;
 
-                for (int i = 0; i < 3; ++i) {
+                for (int i = 0; i < countOfNumbersInVersion; ++i) {
                     summedNumbersVersion += Convert.ToInt32(splitedVersion[i]);
                 }
 
@@ -240,32 +255,20 @@ namespace repository {
          * а все ли сделано верно. Но в твоем случае те же проверки можно выполнить через уже существующие методы. Ниже напишу, как.
          */
 
-        /// <summary>
-        /// Метод для проверки того, находится ли текущий продукт в репозитории
-        /// </summary>
-        public bool IsThereProduct(Product product) {
-            return _products.Contains(product);
-        }
-
-        /// <summary>
-        /// Метод для проверки того, находится ли текущая версия в репозитории
-        /// </summary>
-        public bool IsThereVersion(Version version) {
-            return _versions.Contains(version);
-        }
 
         /*
          * Два метода выше излишни, т.к. можно сделать то же через GetProduct и GetVersion. И проверить результат на null.
          */
-        
 
-        /// <summary>
-        /// Метод для очистки репозитория
-        /// </summary>
-        public void ClearProductsAndVersions(){
-            _products.Clear();
-            _versions.Clear();
-        }
+        /*
+         * ПРАВКИ:
+         * 1) Метод IsThereProduct() я переместил выше и реализовал с помощью GetProduct(). Здесь он мне понадобился здесь не
+         * только для тестирования.
+         * 2) Метод IsThereVersion переместил в тестовый класс. Но реализовать проверку на наличие версии в репозитори при помощи GetVersion не получится,
+         * так как мы получаем версию по имени продукта и номеру версии, а, например, при тестировании метода обновления важны абсолютно
+         * все данные о версии.
+        */
+        
 
 
         /*
@@ -274,34 +277,29 @@ namespace repository {
          * править и этот метод тоже. Каждый раз.
          */
 
-        /// <summary>
-        /// Метод для получения количества уникальных продуктов в репозиотрии
-        /// </summary>
-        public int GetCountProducts() {
-            return _products.Count;
-        }
-
-        /// <summary>
-        /// Метод для получения количества версий в репозитории
-        /// </summary>
-        public int GetCountVersions() {
-            return _versions.Count;
-        }
-
+        /*
+         * ПРАВКИ:
+         * 1) Убрал метод CleatProductsAndVersions(). Теперь в тестовом классе перед началом каждого теста создается новый объект репозитория 
+         */
 
         /*
          * Проверка количества версий и объектов тоже не нужно. Просто проверяй, что добавленный тобой продукт/версия появился в репозитории
          */
 
         /*
-         ПРАВКИ:
-         1) Добавил публичные методы IsThereProduct, IsThereVersion, ClearProductsAndVersions, GetCountProducts, GetCountVersions
-         для вызова их в тестовых методах.
-        */
+         * ПРАВКИ:
+         * 1) Убрал методы, возвращающие количества версий и продуктов, а также проверки количества версий и продуктов из тестов 
+         */
+
 
         /*
          * Еще добавлю, что сами по себе некоторые из этих доп. методов, возможно и могут быть в API репозитория, но только в том случае, если
          * это обусловлено требованиями к API, а не тестами. Именно поэтому я и предлагаю их не добавлять сейчас.
+         */
+        
+        /*
+         * ПРАВКИ:
+         * 1) Убрал все добавленные для тестирования методы (кроме IsThereProduct, так как в этом методе есть нужда не только для тестирования)
          */
 
     }
