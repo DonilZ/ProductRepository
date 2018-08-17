@@ -40,7 +40,7 @@ namespace repository {
         public void GetProducts() {
             List<Product> products = _currentProductRepository.GetProducts();
             foreach(Product currentProduct in products) {
-                Console.WriteLine($"| {currentProduct.GetProductName()} |  | {currentProduct.GetNumberLatestVersion()} |  | {currentProduct.GetShortDescription()} |");
+                Console.WriteLine($"| {currentProduct.GetProductName()} |  | {currentProduct.GetLatestVersionNumber()} |  | {currentProduct.GetShortDescription()} |");
             }
         }
 

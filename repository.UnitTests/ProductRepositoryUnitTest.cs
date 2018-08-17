@@ -33,7 +33,7 @@ namespace repository.UnitTests {
         [TestCase("1.1.1.1")]
         [TestCase("1.fd.1")]
         [TestCase("a.1.q")]
-        public void IsProductVersionCorrect_EnteredIncorrectProductVersion_ReturnsFalse(string incorrectProductVersion) {
+        public void IsProductVersionCorrect_ForIncorrectProductVersion_ReturnsFalse(string incorrectProductVersion) {
             //Arrange
             
 
@@ -48,7 +48,7 @@ namespace repository.UnitTests {
         [TestCase("123456.1234567.12345678")]
         [TestCase("1.1.1")]
         [TestCase("0.0.0")]
-        public void IsProductVersionCorrect_EnteredCorrectProductVersion_ReturnsTrue(string productVersion) {
+        public void IsProductVersionCorrect_ForCorrectProductVersion_ReturnsTrue(string productVersion) {
             //Arrange
 
             //Act
@@ -60,7 +60,15 @@ namespace repository.UnitTests {
 
 
         [Test]
-        public void AddVersion_EnteredIncorrectProductVersion_WriteToLogAboutIncorrectEnteredProductVersion() {
+        public void AddVersion_WithIncorrectVersionNumber_FailsAndWriteThisToLog() {
+
+            /*
+             * Интересно! Когда стал переименовывать метод, то уперся в то, что же написать в третьем фрагменте. Ведь при добавлении версии с 
+             * некорректным номером система не просто должна писать в лог, но и выполнять какое-то действие, либо информировать о том, что выполнить его не может.
+             * В данном случае варианта, наверное, 2. Первый - выкинуть исключение ArgumentException. Второй - просто вернуть null, вместо ссылки на вновь добавленную версию.
+             * По идее, второй вариант получше, но метод войдовый, поэтому такой вариант здесь не подойдет. Но в любом случае вызов метода на корректных данных и на некорректных должен
+             * чем-то отличаться. Я пока написал в название метода Fail, а какой конкретно Fail ты сделаешь - вибирай) И, естественно, нужна проверка в секции Assert, что Fail был. 
+             */
             //Arrange
             Version version = CreateNewVersion(".1.1.");
 
@@ -69,7 +77,7 @@ namespace repository.UnitTests {
 
             //Assert
             string expectedMessage = "Номер версии введен некорректно";
-            string factMessage = _lastMessageFromLog;
+            string factMessage = _lastMessageFromLog;                        /*->actualMessage. Fact как прилагательное не используется*/
 
             Assert.AreEqual(expectedMessage, factMessage);
         }
@@ -85,7 +93,7 @@ namespace repository.UnitTests {
 
             //Assert
             bool resultWasProductAdded = CurrentProductRepository.IsThereProduct(new Product(newVersion));
-            bool resultWasVersionAdded = IsThereVersion(newVersion);
+            bool resultWasVersionAdded = IsThereVersion(newVersion);  /*Мне кажется, префикс result здесь лишний*/
 
             Assert.True(resultWasProductAdded);
             Assert.True(resultWasVersionAdded);        
@@ -115,18 +123,6 @@ namespace repository.UnitTests {
             string factMessage = _lastMessageFromLog;
 
             Assert.AreEqual(expectedMessage, factMessage);
-
-            /*
-             * Не совсем понял вопрос. Но попробую просто описать схему теста, который ты, как я понял, хочешь написать. 
-             * У тебя перед каждым тестом репозиторий пуст. Добавь в него продукт и его версию в секции Arrange. В секции Act добавь еще одну 
-             * версию этого же продукта, но меньшую по номеру. В секции Assert проверь, что в логгер записано правильное сообщение. На первый взгляд проблем
-             * в этом вроде нет. Если есть, то опиши их еще раз, плс.
-             */
-            
-            /*
-             * Сделал, как вы сказали, теперь все понял.
-             */
-
         }
 
 
@@ -218,26 +214,6 @@ namespace repository.UnitTests {
         }
 
 
-        /*
-         * Ниже я переименовал два тестовых метода. Сравни их, плс, и обрати внимание на то, что я убрал из названия то, 
-         * что проверяется удаления версии из списка версий из списка версий продукта. С точки зрения пользователя репозитория 
-         * не важно, как он хранит версии и продукты. Тут важно только то, что если удаляется версия продукта и она одна, то удаляется 
-         * и весь продукт, а если не одна - то продукт остается. 
-         * Можно, конечно, как-то тестировать согласованность списков, но ведь эта согласованность нужно для нормальной работы репозитория? 
-         * Если нужна, то тогда она будет косвенно проверена через публичное API. А если не нужна, то тогда возникнет вопрос, зачем она вообще нужна.
-         * Собственно, это и есть аргумент в пользу того, чтобы тестировать только публичное API класса)
-         * 
-         * И еще один момент. Такое именования тестовых методов нацелено ведь на то, чтобы они читались как чек-лист в документации. И в общем, они 
-         * так и читаются. В этом случае не являются ли tripple slash - комменты к ним излишними? 
-         */
-
-        /*
-         * ПРАВКИ:
-         * 1) Насчет названий понял (исправлено), действительно, проверяю лишнее.
-         * 2) Tripple slash комментарии у тестовых методов убрал. 
-         */
-
-
         [Test]
         public void RemoveVersion_TheProductHasOnlyOneVersion_RemovesTheVersionAndTheProductAndWritesThisToLog() {
             //Arrange
@@ -291,20 +267,6 @@ namespace repository.UnitTests {
         /// Метод для создания объектов класса Version
         /// </summary>
         private Version CreateNewVersion(string productVersion) {
-
-
-             /*
-             * Это не является реализацией фабричного метода. Ты просто вынес повторяющийся код по созданию объекта в отдельный метод. Предлагаю 
-             * посмотреть описание Фабрик и Фабричных методов.
-             */
-
-             /*
-              * ПРАВКИ:
-              * 1) Исправил название метода CreateNewVersion() на CreateNewVersion(). Просто в книге The Art of Unit Testing
-              * автор почему-то назвал похожий метод фабричным я, видимо, не так понял. Обязательно перечитаю про Фабричный метод и Фабрику
-              */
-
-
             FileInfo fileInfo = new FileInfo();
             fileInfo.FileName = "fileName";
             fileInfo.FileUrl = "fileUrl";
