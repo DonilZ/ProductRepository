@@ -9,10 +9,13 @@ namespace repository
         static void Main(string[] args)
         {
             ILogger logger = new ConsoleLogger();
-            ProductRepository currentProductRepository = new ProductRepository(logger);
+            ProductRepository currentProductRepository = new MemoryProductRepository(logger);
 
-            UserShellGet currentUserShellGet = new UserShellGet(currentProductRepository);
-            UserShell currentUserShell = new UserShell(currentProductRepository);
+            ConnectionData connData = new ConnectionData("localhost", "5432", "repository_db", "donilz", "1234");
+            ProductRepository currentProductRepositorySQL = new PostgreSQLProductRepository(connData, logger);
+
+            UserShellGet currentUserShellGet = new UserShellGet(currentProductRepositorySQL);
+            UserShell currentUserShell = new UserShell(currentProductRepositorySQL);
          
             while (true) {        
                 Console.WriteLine("Выберите действие:");

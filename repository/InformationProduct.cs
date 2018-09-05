@@ -16,56 +16,55 @@ namespace repository {
     /// Класс Версия продукта. Объекты данного класса хранят соответствующую информацию о версии продукта(прописанной в ТЗ) с возможностью обновления каких-либо данных о версии.
     /// </summary>
     public class Version {
-        public string ProductName { get; private set; }  
+        public int Id { get; private set; } 
         public string ProductVersion { get; private set; } 
         public string ShortDescription { get; private set; }
         public string LongDescription { get; private set; }
         public string Changes { get; private set; }
-        public FileInfo DownloadableFile { get; private set; } 
+        public string DownloadableFileName { get; private set; } 
+        public string DownloadableFileUrl { get; private set; }
+        public int ProductId {get; set;}
 
-        public Version (string productName, string productVersion, string shortDescription,
-                        string longDescription, string changes, FileInfo downloadableFile) {
-            ProductName = productName;
+        public Version (string productVersion, string shortDescription,
+                        string longDescription, string changes, string downloadableFileName, string downloadableFileUrl) {
             ProductVersion = productVersion;
             ShortDescription = shortDescription;
             LongDescription = longDescription;
             Changes = changes;
-            DownloadableFile = downloadableFile;
+            DownloadableFileName = downloadableFileName;
+            DownloadableFileUrl = downloadableFileUrl;
+        }
+
+        /// <summary>
+        /// Метод для инициализации идентификатора продукта
+        /// </summary>
+        public void SetProductId (int productId) {
+            ProductId = productId;
         }
 
         /// <summary>
         /// Метод для обновления информации о версии.
         /// </summary>
         public void Update(Version updateVersion) {
-            ProductName = updateVersion.ProductName;
             ProductVersion = updateVersion.ProductVersion;
             ShortDescription = updateVersion.ShortDescription;
             LongDescription = updateVersion.LongDescription;
             Changes = updateVersion.Changes;
-            DownloadableFile = updateVersion.DownloadableFile;
+            DownloadableFileName = updateVersion.DownloadableFileName;
+            DownloadableFileUrl = updateVersion.DownloadableFileUrl;
         }
 
         /// <summary>
         /// Перегрузка метода Equals для объектов класса Version
         /// </summary>
         public override bool Equals(object obj) {
-
-
-            /*
-             * ВОПРОСЫ:
-             * 1) А что необходимо предпринять в таком случае? Просто без этой перегрузки некорректно сравниваются объекты.
-             *              * 
-             * Думаю, там придется уже либо полностью все поля сравнивать, либо, может быть, функцию на SQL-сервере писать и на нее как-то маппироваться
-             * с помощью какого-нибудь CustomEquals(). Нужно разбираться уже с конкретным ORM.
-             */
-
             var version = obj as Version;
             if (version == null) return false;
 
-            return this.ProductName == version.ProductName && this.ProductVersion == version.ProductVersion
+            return  this.ProductVersion == version.ProductVersion
                     && this.ShortDescription == version.ShortDescription && this.LongDescription == version.LongDescription
-                    && this.Changes == version.Changes && this.DownloadableFile.FileName == version.DownloadableFile.FileName
-                    && this.DownloadableFile.FileUrl == version.DownloadableFile.FileUrl;
+                    && this.Changes == version.Changes && this.DownloadableFileName == version.DownloadableFileName
+                    && this.DownloadableFileUrl == version.DownloadableFileUrl;
         }
     }
 
@@ -75,22 +74,18 @@ namespace repository {
     ///добавления, обновления, удаления и, при необходимости, изменения последней версии Продукта   
     ///</summary>
     public class Product {
-        private List<Version> _allVersions;
+        public int Id {get; private set;}
+        public string ProductName {get; private set;}
         private Version _latestVersion;
-        private string _nameProduct;
+        private List<Version> _allVersions;
 
-        public Product(Version latestVersion) {
-            _allVersions = new List<Version>();
-            _latestVersion = latestVersion;
-            _allVersions.Add(latestVersion);
-            _nameProduct = _latestVersion.ProductName;
+        public Product (string productName) {
+            ProductName = productName;
         }
-
-        /// <summary>
-        /// Метод для получения названия продукта.
-        /// </summary>
-        public string GetProductName() {
-            return _nameProduct;
+        public void InitializeLatestVersion(Version latestVersion) {
+            _latestVersion = latestVersion;
+            this._allVersions = new List<Version>();
+            this._allVersions.Add(latestVersion);
         }
 
         /// <summary>
@@ -174,7 +169,7 @@ namespace repository {
             var product = obj as Product;
             if (product == null) return false;
 
-            return this._nameProduct == product._nameProduct && this._latestVersion == product._latestVersion
+            return this.ProductName == product.ProductName && this._latestVersion == product._latestVersion
                     && this._allVersions.SequenceEqual(product._allVersions);
         }
 

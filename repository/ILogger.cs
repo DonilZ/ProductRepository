@@ -25,7 +25,5 @@ namespace repository {
             Console.WriteLine(textLog);
         }
     }
-
-
     
 }

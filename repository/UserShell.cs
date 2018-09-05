@@ -3,26 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace repository {
-
-    /*   
-     *
-     * ВОПРОСЫ:
-     * 1) Есть ли еще какие-либо преимущества (помимо оптимальности) методов экзмепляров двух классов UserShell перед методами типа в рамках данного случая? 
-     * Ведь нам теперь вместо передачи аргументов в методы необходимо создавать объекты каждого из двух классов (+ создание конструкторов с параметром в каждом классе).
-     */
-
-     /*
-      * С оптимальностью - вопрос. В одном случае ты создаешь экземпляры, другом - передаешь параметр в метод, а значит он кладется в стэк. В зависимость от сценария
-      * оптимальнее может оказаться и тот, и другой подходы. Но оптимальность часто не главный критерий, т.к. проблемы со скоростью могут быть совсем в другом месте и 
-      * там их решить можно только до определенного предела, на фоне которого оптимизация здесь может вообще не иметь никакого практического смысла. 
-      * 
-      * А вот принципы слабой связаности (low coupling) в больших системах имеют очень большое значение, т.к. позволяют делать системы гибче и надежнее. И в случае работы со 
-      * static-классам связаность очень сильная. Ты не можешь заменить один статик класс на другой. В тестах, или когда нужно подменить функциональность. А в случае с экземплярами
-      * ты можешь и объект класса-наследника подсунуть вместо основного, и mock-и, что существенно снижает связанность. Можешь интерфейсы использовать, что еще большую гибкость добавляет.
-      * Главное преимущество - в этом. 
-      */
-
-
     ///<summary>
     ///Класс, отвечающий за предоставление пользователю необходимой информации о продуктах и их версиях из БД.
     ///</summary>
@@ -40,7 +20,7 @@ namespace repository {
         public void GetProducts() {
             List<Product> products = _currentProductRepository.GetProducts();
             foreach(Product currentProduct in products) {
-                Console.WriteLine($"| {currentProduct.GetProductName()} |  | {currentProduct.GetLatestVersionNumber()} |  | {currentProduct.GetShortDescription()} |");
+                Console.WriteLine($"| {currentProduct.ProductName} |  | {currentProduct.GetLatestVersionNumber()} |  | {currentProduct.GetShortDescription()} |");
             }
         }
 
@@ -73,13 +53,13 @@ namespace repository {
             Console.WriteLine("Введите номер версии данного продукта:");
             string productVersion = Console.ReadLine();
 
-            Version resultedVersion = _currentProductRepository.GetProductConcreteVersion(productName, productVersion);
+            Version resultedVersion = _currentProductRepository.GetConcreteVersion(productName, productVersion);
 
             if (resultedVersion != null) {
-                Console.WriteLine($"| {resultedVersion.ProductName} |  | {resultedVersion.ProductVersion} |  " + 
+                Console.WriteLine($"| {productName} |  | {resultedVersion.ProductVersion} |  " + 
                                     $"| {resultedVersion.ShortDescription} |  | {resultedVersion.LongDescription} |  " + 
-                                    $"| {resultedVersion.Changes} |  | {resultedVersion.DownloadableFile.FileName} |  " + 
-                                    $"| {resultedVersion.DownloadableFile.FileUrl} |");
+                                    $"| {resultedVersion.Changes} |  | {resultedVersion.DownloadableFileName} |  " + 
+                                    $"| {resultedVersion.DownloadableFileUrl} |");
             }
             else {
                 Console.WriteLine("Выбранной версии не существует");
@@ -103,21 +83,23 @@ namespace repository {
         /// Метод для добавления версии (и, возможно, продукта) в репозиторий
         /// </summary>
         public void AddVersion() {
+            string productName = InputProductName();
             Version newVersion = InputValues();
 
-            _currentProductRepository.AddVersion(newVersion);
+            _currentProductRepository.AddVersion(productName, newVersion);
         }
 
         /// <summary>
         /// Метод для обновления конкретной версии в репозитории
         /// </summary>
         public void UpdateVersion() {
-            Version inputVersion = InputValues();
-            
+            string productName = InputProductName();
 
+            Version inputVersion = InputValues();
+        
             Version updatedVersion = inputVersion;
 
-            _currentProductRepository.UpdateVersion(updatedVersion);
+            _currentProductRepository.UpdateVersion(productName, updatedVersion);
         }
 
         /// <summary>
@@ -133,15 +115,18 @@ namespace repository {
             _currentProductRepository.RemoveVersion(productName, productVersion);
         }
 
-        /// <summary>
-        /// Метод для ввода пользователем информации
-        /// </summary>
-        private Version InputValues() {
-
+        private string InputProductName() {
             Console.WriteLine("Введите уникальное имя продукта:");
             string productName;
             productName = Console.ReadLine();
 
+            return productName;
+        }
+
+        /// <summary>
+        /// Метод для ввода пользователем информации
+        /// </summary>
+        private Version InputValues() {
             Console.WriteLine("Введите номер версии продукта:");
             string productVersion;
             productVersion = Console.ReadLine();
@@ -158,15 +143,15 @@ namespace repository {
             string changes;
             changes = Console.ReadLine();
 
-            FileInfo file = new FileInfo();
-
             Console.WriteLine("Введите уникальное имя файла с дистрибутивом продукта:");
-            file.FileName = Console.ReadLine();
+            string fileName;
+            fileName = Console.ReadLine();
 
             Console.WriteLine("Введите URL с ссылкой на файл с дистрибутивом продукта:");
-            file.FileUrl = Console.ReadLine();
+            string fileUrl;
+            fileUrl = Console.ReadLine();
 
-            return new Version(productName, productVersion, shortDescription, longDescription, changes, file);
+            return new Version(productVersion, shortDescription, longDescription, changes, fileName, fileUrl);
         }
     }
 }
