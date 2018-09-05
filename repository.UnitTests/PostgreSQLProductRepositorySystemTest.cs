@@ -10,6 +10,7 @@ namespace repository.UnitTests {
     /// <summary>
     /// Тестовый класс для тестирования публичных методов класса PostgreSQLProductRepository
     /// </summary>
+    [Ignore("Системные тесты с внешней зависимостью в виде базы данных")]
     [TestFixture]
     public class PostgreSQLProductRepositoryUnitTest {
         private string _lastMessageFromLog;

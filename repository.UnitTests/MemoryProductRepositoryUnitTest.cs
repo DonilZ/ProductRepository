@@ -9,7 +9,6 @@ namespace repository.UnitTests {
     /// <summary>
     /// Тестовый класс для тестирования публичных методов класса MemoryProductRepository
     /// </summary>
-    [Ignore("Системные тесты с внешней зависимостью в виде базы данных")]
     [TestFixture]
     public class MemoryProductRepositorySystemTest {
         private string _lastMessageFromLog;
