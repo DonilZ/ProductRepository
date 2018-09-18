@@ -9,6 +9,7 @@ namespace repository.UnitTests {
     /// <summary>
     /// Тестовый класс для тестирования публичных методов класса MemoryProductRepository
     /// </summary>
+    
     [TestFixture]
     public class MemoryProductRepositorySystemTest {
         private string _lastMessageFromLog;
@@ -203,7 +204,7 @@ namespace repository.UnitTests {
             Assert.False(IsRemovableVersionRemovedFromRepository);
         }
 
-
+        [Ignore ("Не готов")]
         [Test]
         public void RemoveVersion_TheProductHasOnlyOneVersion_RemovesTheVersionAndTheProductAndWritesThisToLog() {
             //Arrange

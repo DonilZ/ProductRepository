@@ -11,8 +11,7 @@ namespace repository
             ILogger logger = new ConsoleLogger();
             ProductRepository currentProductRepository = new MemoryProductRepository(logger);
 
-            ConnectionData connData = new ConnectionData("localhost", "5432", "repository_db", "donilz", "1234");
-            ProductRepository currentProductRepositorySQL = new PostgreSQLProductRepository(connData, logger);
+            ProductRepository currentProductRepositorySQL = new PostgreSQLProductRepository(logger);
 
             UserShellGet currentUserShellGet = new UserShellGet(currentProductRepositorySQL);
             UserShell currentUserShell = new UserShell(currentProductRepositorySQL);

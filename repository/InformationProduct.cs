@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ComponentModel.DataAnnotations;
 
 namespace repository {
 
@@ -23,7 +24,7 @@ namespace repository {
         public string Changes { get; private set; }
         public string DownloadableFileName { get; private set; } 
         public string DownloadableFileUrl { get; private set; }
-        public int ProductId {get; set;}
+        public Product ContainProduct  { get; private set; }
 
         public Version (string productVersion, string shortDescription,
                         string longDescription, string changes, string downloadableFileName, string downloadableFileUrl) {
@@ -35,11 +36,8 @@ namespace repository {
             DownloadableFileUrl = downloadableFileUrl;
         }
 
-        /// <summary>
-        /// Метод для инициализации идентификатора продукта
-        /// </summary>
-        public void SetProductId (int productId) {
-            ProductId = productId;
+        public void SetContainProduct (Product containProduct) {
+            ContainProduct = containProduct;
         }
 
         /// <summary>
@@ -74,62 +72,52 @@ namespace repository {
     ///добавления, обновления, удаления и, при необходимости, изменения последней версии Продукта   
     ///</summary>
     public class Product {
-        public int Id {get; private set;}
-        public string ProductName {get; private set;}
-        private Version _latestVersion;
-        private List<Version> _allVersions;
+        [Key]
+        public int Id { get; private set; }
+        public string ProductName { get; private set; }
+        public List<Version> AllVersions { get; private set; }
 
         public Product (string productName) {
             ProductName = productName;
         }
         public void InitializeLatestVersion(Version latestVersion) {
-            _latestVersion = latestVersion;
-            this._allVersions = new List<Version>();
-            this._allVersions.Add(latestVersion);
+            this.AllVersions = new List<Version>();
+            this.AllVersions.Add(latestVersion);
         }
 
         /// <summary>
         /// Метод для получения номера последней версии продукта.
         /// </summary>
         public string GetLatestVersionNumber() {
-            return _latestVersion.ProductVersion;
+            return AllVersions.Last().ProductVersion;
         }
 
         /// <summary>
         /// Метод для получения краткого описания последней версии продукта.
         /// </summary>
         public string GetShortDescription() {
-            return _latestVersion.ShortDescription;
+            return AllVersions.Last().ShortDescription;
         }
 
         /// <summary>
         /// Метод для получения общего списка всех версий продукта.
         /// </summary>
         public List<Version> GetAllVersions() {
-            return _allVersions;
-        }
-
-        /// <summary>
-        /// Метод для обновления последней версии продукта.
-        /// </summary>
-        private void UpdateLatestVersion() {
-            _latestVersion = _allVersions.LastOrDefault();
+            return AllVersions;
         }
 
         /// <summary>
         /// Метод для добавления версии в общий список версий продукта и, как следствие, обновления последней версии продукта.
         /// </summary>
         public void AddVersion(Version newVersion) {
-            _allVersions.Add(newVersion);
-            UpdateLatestVersion();
+            AllVersions.Add(newVersion);
         }
 
         /// <summary>
         /// Метод для удаления версии из общего списка версий продукта и, как следствие, обновления последней версии продукта (при необходимости).
         /// </summary>
         public void RemoveVersion(Version removedVersion) {
-            _allVersions.Remove(removedVersion);
-            UpdateLatestVersion();
+            AllVersions.Remove(removedVersion);
         }
 
         /// <summary>
@@ -137,7 +125,7 @@ namespace repository {
         /// </summary>
         public bool NewVersionIsGreaterThenLatest(Version newVersion)
         {
-            var latestVersionEnumerator = GetVersionComponentEnumerator(_latestVersion.ProductVersion);
+            var latestVersionEnumerator = GetVersionComponentEnumerator(AllVersions.Last().ProductVersion);
             var addedVersionEnumerator = GetVersionComponentEnumerator(newVersion.ProductVersion);
 
             return GreaterThen(latestVersionEnumerator, addedVersionEnumerator);
@@ -169,8 +157,8 @@ namespace repository {
             var product = obj as Product;
             if (product == null) return false;
 
-            return this.ProductName == product.ProductName && this._latestVersion == product._latestVersion
-                    && this._allVersions.SequenceEqual(product._allVersions);
+            return this.ProductName == product.ProductName && this.AllVersions.Last() == product.GetAllVersions().Last()
+                    && this.AllVersions.SequenceEqual(product.AllVersions);
         }
 
     }

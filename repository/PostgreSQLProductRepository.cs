@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace repository {
 
@@ -8,42 +9,17 @@ namespace repository {
     ///Класс, осуществляющий работу с базой данных PostgreSQL (хранение версий и продуктов, получение необходимой информации о версиях и продуктах, добавление, обновление и удаление версий и продуктов) 
     ///</summary>
     public class PostgreSQLProductRepository : ProductRepository {
-        private ConnectionData _connectionData;
         private ILogger _logger;
         private VersionContext _database;
 
-        public PostgreSQLProductRepository(ConnectionData connectionData, ILogger logger) {
-            _connectionData = connectionData;
+        public PostgreSQLProductRepository(ILogger logger) {
             _logger = logger;
-            _database = new VersionContext(_connectionData);
+            _database = new VersionContext();
         }
 
         public override List<Product> GetProducts() {
-            List<Version> latestVersionsOfAllProducts = getTheLatestVersionsOfAllProducts();
-
-            List<Product> allProducts = formAListOfAllProducts(latestVersionsOfAllProducts);
-
-            return allProducts;
-        }
-
-        private List<Version> getTheLatestVersionsOfAllProducts() {
-            return _database.Versions
-                    .OrderBy(version => version.ProductVersion)
-                    .GroupBy(version => version.ProductId)
-                    .Select(x => x.Last()).ToList();
-        }
-
-        private List<Product> formAListOfAllProducts(List<Version> latestVersionsOfAllProducts) {
-            List<Product> allProducts = new List<Product>();
-
-            foreach(var latestVersion in latestVersionsOfAllProducts) {
-                Product currentProduct = _database.Products
-                                        .Single(product => product.Id == latestVersion.ProductId);
-
-                currentProduct.InitializeLatestVersion(latestVersion);
-
-                allProducts.Add(currentProduct);
-            }
+            List<Product> allProducts = _database.Products
+                                        .Include(product => product.AllVersions).ToList();
 
             return allProducts;
         }
@@ -57,20 +33,20 @@ namespace repository {
         private List<Version> formAListOfVersionsOfTheDesiredProduct (string productName) {
             Product currentProduct = getProductFromDatabase(productName);
 
-            return currentProduct == null ? null : _database.Versions
-                                                    .Where(version => version.ProductId == currentProduct.Id)
-                                                    .OrderBy(version => version.ProductVersion).ToList();
+            return currentProduct == null ? null : currentProduct.AllVersions;
         }
 
         public override Version GetConcreteVersion(string productName, string productVersion) {
-            Product currentProduct = getProductFromDatabase(productName);
-
-            Version requiredVersion = currentProduct == null ? null : 
-                                    _database.Versions
-                                    .SingleOrDefault(version => version.ProductId == currentProduct.Id
-                                                    && version.ProductVersion == productVersion);
+            Version requiredVersion = extractDesiredVersionFromProduct(productName, productVersion);
 
             return requiredVersion;                            
+        }
+
+        private Version extractDesiredVersionFromProduct (string productName, string productVersion) {
+            Product currentProduct = getProductFromDatabase(productName);
+
+            return currentProduct == null ? null :  currentProduct.AllVersions
+                                                    .SingleOrDefault(version => version.ProductVersion == productVersion);
         }
 
         public override bool AddVersion(string productName, Version newVersion) {
@@ -91,21 +67,15 @@ namespace repository {
                 _logger.LogRecord($"Новый продукт {productName} успешно добавлен");
             }
             else {
-                Version latestVersionOfCurrentProduct = _database.Versions
-                                                        .OrderBy(version => version.ProductVersion)
-                                                        .Last(version => version.ProductId == currentProduct.Id);
-
-                currentProduct.InitializeLatestVersion(latestVersionOfCurrentProduct);
-                
                 if (!currentProduct.NewVersionIsGreaterThenLatest(newVersion)) {
                     _logger.LogRecord("Данная версия не может быть добавлена, так как не является новой");
                     return false;
-                } 
+                }
+                
+                newVersion.SetContainProduct(currentProduct);
+                _database.Versions.Add(newVersion); 
             }
 
-            newVersion.SetProductId(currentProduct.Id);
-
-            _database.Versions.Add(newVersion);
             _database.SaveChanges();
                 
             _logger.LogRecord($"Версия {newVersion.ProductVersion} продукта {productName} успешно добавлена");
@@ -127,18 +97,15 @@ namespace repository {
                 return false;
             }
 
-            if (!_database.Versions.Any(version => version.ProductId == currentProduct.Id 
-                                        && version.ProductVersion == updatabaleVersion.ProductVersion)) {
-
+            if (!currentProduct.AllVersions.Any(version => version.ProductVersion == updatabaleVersion.ProductVersion)) {
                 _logger.LogRecord("Обновляемой версии продукта не существует!");
                 return false;
             }
 
-            Version versionForUpdateFromRepository = _database.Versions
-                                                    .Single(version => version.ProductId == currentProduct.Id 
-                                                            && version.ProductVersion == updatabaleVersion.ProductVersion);
+            Version versionForUpdate = currentProduct.AllVersions
+                                                    .First(version => version.ProductVersion == updatabaleVersion.ProductVersion);
 
-            versionForUpdateFromRepository.Update(updatabaleVersion);
+            versionForUpdate.Update(updatabaleVersion);
             _database.SaveChanges();
 
             _logger.LogRecord($"Версия {updatabaleVersion.ProductVersion} продукта {productName} успешно обновлена");
@@ -155,16 +122,14 @@ namespace repository {
                 return false;
             }
 
-            if (!_database.Versions.Any(version => version.ProductId == currentProduct.Id 
-                                            && version.ProductVersion == productVersion)) {
+            if (!currentProduct.AllVersions.Any(version => version.ProductVersion == productVersion)) {
 
                 _logger.LogRecord("Удаляемой версии продукта не существует!");
                 return false;
             }
 
 
-            _database.Versions.Remove(_database.Versions.First((version => version.ProductId == currentProduct.Id 
-                                                                    && version.ProductVersion == productVersion)));
+            _database.Versions.Remove(currentProduct.AllVersions.First(version => version.ProductVersion == productVersion));
             _database.SaveChanges();
 
             _logger.LogRecord($"Версия {productVersion} продукта {productName} успешно удалена");
@@ -180,7 +145,7 @@ namespace repository {
         }
 
         private bool IsTheProductHaveAtLeastOneVersion(Product currentProduct) {
-            return _database.Versions.Any(version => version.ProductId == currentProduct.Id);
+            return _database.Versions.Any(version => version.ContainProduct.Id == currentProduct.Id);
         }
 
         private void removeProduct (string nameOfTheRemovableProduct) {
@@ -192,7 +157,7 @@ namespace repository {
         }
 
         private Product getProductFromDatabase(string productName) {
-            Product currentProduct = _database.Products
+            Product currentProduct = _database.Products.Include(product => product.AllVersions)
                                     .SingleOrDefault(product => product.ProductName == productName);
 
             return currentProduct;

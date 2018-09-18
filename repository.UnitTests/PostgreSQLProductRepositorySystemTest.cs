@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using repository;
 using Moq;
 
@@ -10,31 +10,37 @@ namespace repository.UnitTests {
     /// <summary>
     /// Тестовый класс для тестирования публичных методов класса PostgreSQLProductRepository
     /// </summary>
-    [Ignore("Системные тесты с внешней зависимостью в виде базы данных")]
     [TestFixture]
     public class PostgreSQLProductRepositoryUnitTest {
         private string _lastMessageFromLog;
-        private ConnectionData _connectionData;
         private VersionContext _database;
         public PostgreSQLProductRepository CurrentProductRepository;
         public Mock<ILogger> MockLogger { get; set; }
 
         [OneTimeSetUp]
         public void OneTimeSetUp() {
-            _connectionData = new ConnectionData("localhost", "5432", "repository_db", "donilz", "1234");
 
             MockLogger = new Mock<ILogger>();
             MockLogger.Setup(m => m.LogRecord(It.IsAny<string>())).Callback<string>((message) => _lastMessageFromLog = message);
 
-            CurrentProductRepository = new PostgreSQLProductRepository(_connectionData, MockLogger.Object);
+            CurrentProductRepository = new PostgreSQLProductRepository(MockLogger.Object);
 
-            _database = new VersionContext(_connectionData);
+            _database = new VersionContext();
         }
 
         [TearDown]
         public void TearDown() {
+            clearVersions();
             clearProducts();
             _database.SaveChanges();
+        }
+
+        private void clearVersions() {
+            var versions = from version in _database.Versions
+                            select version;
+            foreach(var version in versions) {
+                _database.Versions.Remove(version);
+            }
         }
 
         private void clearProducts() {
@@ -300,7 +306,7 @@ namespace repository.UnitTests {
             Product currentProduct = getProductFromDatabase(productName);
 
             return _database.Versions
-                    .Any(version => version.ProductId == currentProduct.Id && version.ProductVersion == desiredVersion.ProductVersion
+                    .Any(version => version.ContainProduct.Id == currentProduct.Id && version.ProductVersion == desiredVersion.ProductVersion
                         && version.ShortDescription == desiredVersion.ShortDescription && version.LongDescription == desiredVersion.LongDescription
                         && version.Changes == desiredVersion.Changes && version.DownloadableFileName == desiredVersion.DownloadableFileName
                         && version.DownloadableFileUrl == desiredVersion.DownloadableFileUrl);
@@ -313,7 +319,7 @@ namespace repository.UnitTests {
         }
 
         private Product getProductFromDatabase(string productName) {
-            Product currentProduct = _database.Products
+            Product currentProduct = _database.Products.Include(product => product.AllVersions)
                                     .SingleOrDefault(product => product.ProductName == productName);
 
             return currentProduct;
