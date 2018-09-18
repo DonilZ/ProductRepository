@@ -27,7 +27,6 @@ namespace repository {
         public VersionContext(ConnectionData connectionData) {
             _connectionData = connectionData;
         }
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
             string connectionString = $"Host={_connectionData.Host};Port={_connectionData.Port};Database={_connectionData.DatabaseName};" +
                                       $"Username={_connectionData.Username};Password={_connectionData.Password}";
