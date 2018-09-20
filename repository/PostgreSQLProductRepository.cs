@@ -145,7 +145,7 @@ namespace repository {
         }
 
         private bool IsTheProductHaveAtLeastOneVersion(Product currentProduct) {
-            return _database.Versions.Any(version => version.ContainProduct.Id == currentProduct.Id);
+            return currentProduct.GetAllVersions().Any();
         }
 
         private void removeProduct (string nameOfTheRemovableProduct) {

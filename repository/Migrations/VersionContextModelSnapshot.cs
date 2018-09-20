@@ -60,7 +60,7 @@ namespace repository.Migrations
             modelBuilder.Entity("repository.Version", b =>
                 {
                     b.HasOne("repository.Product", "ContainProduct")
-                        .WithMany("_allVersions")
+                        .WithMany("AllVersions")
                         .HasForeignKey("ContainProductId");
                 });
 #pragma warning restore 612, 618

@@ -4,15 +4,6 @@ using System.Linq;
 using System.ComponentModel.DataAnnotations;
 
 namespace repository {
-
-    /// <summary>
-    /// Класс, содержащий информацию о файле (имя файла, URL файла)
-    /// </summary>
-    public class FileInfo{
-		public string FileName { get; set; }
-		public string FileUrl { get; set; }
-	}
-
     /// <summary>
     /// Класс Версия продукта. Объекты данного класса хранят соответствующую информацию о версии продукта(прописанной в ТЗ) с возможностью обновления каких-либо данных о версии.
     /// </summary>
@@ -72,7 +63,6 @@ namespace repository {
     ///добавления, обновления, удаления и, при необходимости, изменения последней версии Продукта   
     ///</summary>
     public class Product {
-        [Key]
         public int Id { get; private set; }
         public string ProductName { get; private set; }
         public List<Version> AllVersions { get; private set; }
